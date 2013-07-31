@@ -1,0 +1,5 @@
+map SAMPLE "STRun Sample Map" {
+   next = "SAMPLE"
+   sky1 = "SKY1", 0
+   music = "D_MESSAG"
+}
