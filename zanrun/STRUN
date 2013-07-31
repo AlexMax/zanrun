@@ -2,14 +2,17 @@
 #include "zcommon.acs"
 #import "scripts/luk.acs"
 
+#define PLAYERMAX 32
+#define MAXCHECKPOINTS 255
+
 // Designate the tics where player hits the start/cp
-int p_starttic[32];
-int p_checkpoint[32][255];
-int p_cstarttic[32]; //clientside starttic [Jroc]
+int p_starttic[PLAYERMAX];
+int p_checkpoint[PLAYERMAX][MAXCHECKPOINTS];
+int p_cstarttic[PLAYERMAX]; //clientside starttic [Jroc]
 
 // Stores the players best time on this map.
-int p_top_time[32];
-int p_top_checkpoint[32][255];
+int p_top_time[PLAYERMAX];
+int p_top_checkpoint[PLAYERMAX][MAXCHECKPOINTS];
 
 // The default script to start the map with.
 script 100 ENTER {
@@ -118,7 +121,7 @@ script 300 RESPAWN {
 script 301 ENTER {
     p_top_time[playernumber()] = 0;
     
-    for (int i = 0;i < 255;i++) {
+    for (int i = 0;i < MAXCHECKPOINTS;i++) {
         p_top_checkpoint[playernumber()][i] = 0;
     }
 	hudmessage(s:"";HUDMSG_PLAIN,300,CR_WHITE,0,0,0); //clear current personal best (since it doesn't work via disconnect) [Jroc]
@@ -147,7 +150,7 @@ script 304 (int p_number) DISCONNECT {
 	p_starttic[p_number] = 0;
 	p_top_time[p_number] = 0;
 	p_cstarttic[playernumber()] = 0;
-	for (int i = 0;i<255;i++) {
+	for (int i = 0;i<MAXCHECKPOINTS;i++) {
 		p_checkpoint[32][i] = 0;
 		p_top_checkpoint[32][i] = 0;
 	}
@@ -537,7 +540,8 @@ function int to_mils(int tics) {
 }
 
 //==========ZANRUN==================
-#define PLAYERMAX 32
+#define F_TIME 0
+#define F_NAME 1
 
 int finaltimes[PLAYERMAX][2]; //times for end map leaderboard
 int temprecord; //temporary variable for storing record
@@ -547,8 +551,7 @@ bool roundover;
 
 script 403 OPEN
 {
-	if (getcvar("luk_system") == 1)
-	{
+	if (getcvar("luk_system") < 1) { delay(35); restart; }
 		// Load high score finish time.
 		acs_ExecuteWait( 970, 0, LUK_RETQUERY_INT, "jrs_hs_time" );
 
@@ -585,30 +588,21 @@ script 403 OPEN
 		
 		JrsHsSetAuthor(); //copy record author to new variable
 		recdone = true;
-		
-	}
-	else
-	{
-		delay(35);
-		restart;
-	}
 }
 
 script 402 ENTER //used to synchronise client with luk
 {
-	if (getcvar("luk_system") == 1)
+	if (getcvar("luk_system") < 1) { delay(35); restart; }
+	if (recdone == false)
 	{
-		if (recdone == false)
-		{
-			ScriptWait(403);
-			if (temprecord != 0)
-				show_therecord(temprecord);
-		}
-		else
-		{
-			if (temprecord != 0)
-				show_therecord(temprecord);
-		}
+		ScriptWait(403);
+		if (temprecord != 0)
+			show_therecord(temprecord);
+	}
+	else
+	{
+		if (temprecord != 0)
+			show_therecord(temprecord);
 	}
 }
 		
@@ -616,18 +610,18 @@ script 401 (void) //displays final scores then exits
 {	
 	roundover = true; //declare the round over for enter and respawn to freeze you
 	for (int j = 0;j<=999;j++) {
-		hudmessage(s:"";HUDMSG_PLAIN,j,CR_WHITE,0,0,0); //clear hud messages
+		hudmessage(s:""; HUDMSG_PLAIN, j, CR_WHITE, 0, 0, 0); //clear hud messages
 	}
 	SetPlayerProperty(1, 1, PROP_TOTALLYFROZEN); //freeze player
 	for (int herp = 0; herp < PLAYERMAX; herp++) //for each entry in finaltimes
 	{
-		finaltimes[herp][0] = p_top_time[herp]; //set the value at index "herp" to the top time of player "herp"
-		finaltimes[herp][1] = herp + 1; //set the player number to be "herp" plus 1, for use with n:
+		finaltimes[herp][F_TIME] = p_top_time[herp]; //set the value at index "herp" to the top time of player "herp"
+		finaltimes[herp][F_NAME] = herp + 1; //set the player number to be "herp" plus 1, for use with n:
 	}
 	for (int derp = 0; derp < PLAYERMAX; derp++)
 	{
-		if (finaltimes[derp][0] == 0) //if an entry has a top time of zero...
-			finaltimes[derp][0] = 99999999; //set it to a huge number (so it doesn't affect sorting)
+		if (finaltimes[derp][F_TIME] == 0) //if an entry has a top time of zero...
+			finaltimes[derp][F_TIME] = 99999999; //set it to a huge number (so it doesn't affect sorting)
 	}
 	int temp = 0;
 	int temp2 = 0;
@@ -635,20 +629,20 @@ script 401 (void) //displays final scores then exits
     {
 		for (int sort = 0; sort < PLAYERMAX - 1; sort++)
         {
-			if (finaltimes[sort][0] > finaltimes[sort + 1][0])
+			if (finaltimes[sort][F_TIME] > finaltimes[sort + 1][F_TIME])
             {
-				temp = finaltimes[sort + 1][0];
-                finaltimes[sort + 1][0] = finaltimes[sort][0];
-                finaltimes[sort][0] = temp;
-                temp2 = finaltimes[sort + 1][1];
-                finaltimes[sort + 1][1] = finaltimes[sort][1];
-                finaltimes[sort][1] = temp2;
+				temp = finaltimes[sort + 1][F_TIME];
+                finaltimes[sort + 1][F_TIME] = finaltimes[sort][F_TIME];
+                finaltimes[sort][F_TIME] = temp;
+                temp2 = finaltimes[sort + 1][F_NAME];
+                finaltimes[sort + 1][F_NAME] = finaltimes[sort][F_NAME];
+                finaltimes[sort][F_NAME] = temp2;
              }
         }
     }
 
 
-	if (finaltimes[0][0] == 99999999) //if the highest ranking entry is 99999999 (indicating no time set)
+	if (finaltimes[0][F_TIME] == 99999999) //if the highest ranking entry is 99999999 (indicating no time set)
 	{
 		printbold(s:"Wow, nodoby managed to beat the course! You guys suck."); //insult the players for being shit (as nobody managed to get a time)
 		delay(35*5);
@@ -656,7 +650,7 @@ script 401 (void) //displays final scores then exits
 	}
 	else
 	{
-		finaltime(finaltimes[0][0], finaltimes[0][1], 0.2, "\ca1st", 501); //otherwise show the highest ranking entry as first place
+		finaltime(finaltimes[0][F_TIME], finaltimes[0][F_NAME], 0.2, "\ca1st", 501); //otherwise show the highest ranking entry as first place
 	}
 	if (finaltimes[1][0] == 99999999) //if the second highest ranking entry is 99999999 (indicating no time set)
 	{
@@ -665,7 +659,7 @@ script 401 (void) //displays final scores then exits
 	}
 	else
 	{
-		finaltime(finaltimes[1][0], finaltimes[1][1], 0.3, "\cb2nd", 502); //otherwise show second place
+		finaltime(finaltimes[1][F_TIME], finaltimes[1][F_NAME], 0.3, "\cb2nd", 502); //otherwise show second place
 	}
 	if (finaltimes[2][0] == 99999999) //if the third highest ranking entry is 99999999 (indicating no time set) and so on and so on...
 	{
@@ -674,7 +668,7 @@ script 401 (void) //displays final scores then exits
 	}
 	else
 	{
-		finaltime(finaltimes[2][0], finaltimes[2][1], 0.4, "\cc3rd", 503);
+		finaltime(finaltimes[2][F_TIME], finaltimes[2][F_NAME], 0.4, "\cc3rd", 503);
 	}
 	if (finaltimes[3][0] == 99999999)
 	{
@@ -683,7 +677,7 @@ script 401 (void) //displays final scores then exits
 	}
 	else
 	{
-		finaltime(finaltimes[3][0], finaltimes[3][1], 0.5, "\cd4th", 504);
+		finaltime(finaltimes[3][F_TIME], finaltimes[3][F_NAME], 0.5, "\cd4th", 504);
 	}
 	if (finaltimes[4][0] == 99999999)
 	{
@@ -692,7 +686,7 @@ script 401 (void) //displays final scores then exits
 	}
 	else
 	{
-		finaltime(finaltimes[4][0], finaltimes[4][1], 0.6, "\ce5th", 505);
+		finaltime(finaltimes[4][F_TIME], finaltimes[4][F_NAME], 0.6, "\ce5th", 505);
 	}
 	delay(35*20);
 	Exit_Normal(0);
