@@ -548,6 +548,7 @@ int temprecord; //temporary variable for storing record
 bool recdone;
 int _jrs_hs_author[ LUK_MAX_STR_VALUE_SIZE ]; //record holder
 bool roundover;
+bool z_tbypass; //used to check whether to bypass built in timelimit
 
 script 403 OPEN
 {
@@ -654,7 +655,7 @@ script 401 (void) //displays final scores then exits
 	}
 	if (finaltimes[1][0] == 99999999) //if the second highest ranking entry is 99999999 (indicating no time set)
 	{
-		delay(35*20); //wait, and then exit, don't display second place as he didn't get a time
+		delay(35*10); //wait, and then exit, don't display second place as he didn't get a time
 		Exit_Normal(0); 
 	}
 	else
@@ -663,7 +664,7 @@ script 401 (void) //displays final scores then exits
 	}
 	if (finaltimes[2][0] == 99999999) //if the third highest ranking entry is 99999999 (indicating no time set) and so on and so on...
 	{
-		delay(35*20);
+		delay(35*10);
 		Exit_Normal(0);
 	}
 	else
@@ -672,7 +673,7 @@ script 401 (void) //displays final scores then exits
 	}
 	if (finaltimes[3][0] == 99999999)
 	{
-		delay(35*20);
+		delay(35*10);
 		Exit_Normal(0);
 	}
 	else
@@ -681,14 +682,14 @@ script 401 (void) //displays final scores then exits
 	}
 	if (finaltimes[4][0] == 99999999)
 	{
-		delay(35*20);
+		delay(35*10);
 		Exit_Normal(0);
 	}
 	else
 	{
 		finaltime(finaltimes[4][F_TIME], finaltimes[4][F_NAME], 0.6, "\ce5th", 505);
 	}
-	delay(35*20);
+	delay(35*10);
 	Exit_Normal(0);
 }
 
@@ -737,6 +738,48 @@ script 406 RESPAWN
 {
 	acs_executealways(405, 0);
 }
+
+script 407 OPEN //Waits a certain amount of time, shows leaderboard, and then exits. I originally wanted to use zandronum's in built timer but this turned out to not be practical
+{
+	delay(1);
+	if (z_tbypass == true) //Check if the map disabled in built time limit
+		terminate;
+	if (getcvar("z_tlimit") == 0) {consolecommand("set z_tlimit 0"); delay(35); restart; } //Check if a timelimit has been set using z_tlimit
+	print(d:getcvar("z_tlimit"), s:" minutes remaining!");
+	if (getcvar("z_tlimit") < 2)
+	{
+		delay(35*50);
+		print(s:"\cg10 SECONDS REMAINING!");
+		delay(35*10);
+		acs_execute(401,0);
+	}
+	else if (getcvar("z_tlimit") < 6)
+	{
+		delay(35*60*(getcvar("z_tlimit") - 1));
+		print(s:"1 minute remaining!!");
+		delay(35*50);
+		print(s:"\cg10 SECONDS REMAINING!");
+		delay(35*10);
+		acs_execute(401,0);
+	}
+	else
+	{
+		delay(35*60*(getcvar("z_tlimit") - 5));
+		print(s:"5 minutes remaining!!");
+		delay(35*60*4);
+		print(s:"1 minute remaining!!");
+		delay(35*50);
+		print(s:"\cg10 SECONDS REMAINING!");
+		delay(35*10);
+		acs_execute(401,0);
+	}
+}
+
+script 408 (void) //Script for maps to activate should they want to bypass any built in time limit.
+{
+	z_tbypass = true;
+}
+
 //function to display leaderboard times
 function void finaltime(int p_time, int player, int height, str pos, int id) {
     int mins = to_mins(p_time);
