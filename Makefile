@@ -1,29 +1,31 @@
 VERSION =
 
-ACC = acc/acc
+ACC = acc\acc.exe
+ACCFLAGS = -i acc
 
-ACCFLAGS = -i acc/
+ZIP = zip\zip.exe
+ZIPFLAGS =
 
-SHELL = /bin/sh
+SHELL = cmd.exe
 
 objects = \
-	zanrun/acs/constant.o \
-	zanrun/acs/luksys.o \
-	zanrun/acs/zanrun.o
+	zanrun\acs\constant.o \
+	zanrun\acs\luksys.o \
+	zanrun\acs\zanrun.o
 
 all: $(objects)
-	cd zanrun && zip -r ../zanrun$(VERSION).pk3 *
+	cd zanrun && ..\${ZIP} ${ZIPFLAGS} -r ..\zanrun$(VERSION).pk3 *
 
-zanrun/acs/:
-	mkdir zanrun/acs/
+zanrun\acs:
+	mkdir zanrun\acs
 
-zanrun/acs/constant.o: zanrun/acs/ zanrun/scripts/luk/constants.acs
-	$(ACC) $(ACCFLAGS) zanrun/scripts/luk/constants.acs zanrun/acs/constant.o
-zanrun/acs/luksys.o: zanrun/acs/ zanrun/scripts/luk/luk.acs
-	$(ACC) $(ACCFLAGS) zanrun/scripts/luk/luk.acs zanrun/acs/luksys.o
-zanrun/acs/zanrun.o: zanrun/acs/ zanrun/scripts/zanrun.acs
-	$(ACC) $(ACCFLAGS) zanrun/scripts/zanrun.acs zanrun/acs/zanrun.o
+zanrun\acs\constant.o: zanrun\acs zanrun\scripts\luk\constants.acs
+	$(ACC) $(ACCFLAGS) zanrun\scripts\luk\constants.acs zanrun\acs\constant.o
+zanrun\acs\luksys.o: zanrun\acs zanrun\scripts\luk\luk.acs
+	$(ACC) $(ACCFLAGS) zanrun\scripts\luk\luk.acs zanrun\acs\luksys.o
+zanrun\acs\zanrun.o: zanrun\acs zanrun\scripts\zanrun.acs
+	$(ACC) $(ACCFLAGS) zanrun\scripts\zanrun.acs zanrun\acs\zanrun.o
 
 clean:
-	rm $(objects) zanrun$(VERSION).pk3
-	rmdir zanrun/acs/
+	del $(objects) zanrun$(VERSION).pk3
+	rmdir zanrun\acs
