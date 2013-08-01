@@ -1,4 +1,4 @@
-#library "strun"
+#library "zanrun"
 #include "zcommon.acs"
 #import "luk/luk.acs"
 
