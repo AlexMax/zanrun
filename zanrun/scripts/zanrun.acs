@@ -1,6 +1,6 @@
 #library "strun"
 #include "zcommon.acs"
-#import "scripts/luk.acs"
+#import "luk/luk.acs"
 
 #define PLAYERMAX 32
 #define MAXCHECKPOINTS 255
