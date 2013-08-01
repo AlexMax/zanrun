@@ -4,6 +4,9 @@
 
 #define PLAYERMAX 32
 #define MAXCHECKPOINTS 255
+#define TICRATE 35
+#define FRACBITS 16
+#define FRACUNIT (1 << FRACBITS)
 
 // Designate the tics where player hits the start/cp
 int p_starttic[PLAYERMAX];
@@ -201,44 +204,44 @@ function void print_time(int p_time, int cp_number) {
         if (mils < 10) {
             hudmessage(d:secs,s:".00",d:mils;
                 HUDMSG_PLAIN, cp_number + 100, CR_WHITE, 1.95,
-                0.8 - ((cp_number << 16) / 20), 0);
+                0.8 - ((cp_number << FRACBITS) / 20), 0);
         } else if (mils < 100) {
             hudmessage(d:secs,s:".0",d:mils;
                 HUDMSG_PLAIN, cp_number + 100, CR_WHITE, 1.95,
-                0.8 - ((cp_number << 16) / 20), 0);
+                0.8 - ((cp_number << FRACBITS) / 20), 0);
         } else {
             hudmessage(d:secs,s:".",d:mils;
                 HUDMSG_PLAIN, cp_number + 100, CR_WHITE, 1.95,
-                0.8 - ((cp_number << 16) / 20), 0);
+                0.8 - ((cp_number << FRACBITS) / 20), 0);
         }
     } else {
         if (secs < 10) {
             if (mils < 10) {
                 hudmessage(d:mins,s:":0",d:secs,s:".00",d:mils;
                     HUDMSG_PLAIN, cp_number + 100, CR_WHITE, 1.95,
-                    0.8 - ((cp_number << 16) / 20), 0);
+                    0.8 - ((cp_number << FRACBITS) / 20), 0);
             } else if (mils < 100) {
                 hudmessage(d:mins,s:":0",d:secs,s:".0",d:mils;
                     HUDMSG_PLAIN, cp_number + 100, CR_WHITE, 1.95,
-                    0.8 - ((cp_number << 16) / 20), 0);
+                    0.8 - ((cp_number << FRACBITS) / 20), 0);
             } else {
                 hudmessage(d:mins,s:":0",d:secs,s:".",d:mils;
                     HUDMSG_PLAIN, cp_number + 100, CR_WHITE, 1.95,
-                    0.8 - ((cp_number << 16) / 20), 0);
+                    0.8 - ((cp_number << FRACBITS) / 20), 0);
             }
         } else {
             if (mils < 10) {
                 hudmessage(d:mins,s:":",d:secs,s:".00",d:mils;
                     HUDMSG_PLAIN, cp_number + 100, CR_WHITE, 1.95,
-                    0.8 - ((cp_number << 16) / 20), 0);
+                    0.8 - ((cp_number << FRACBITS) / 20), 0);
             } else if (mils < 100) {
                 hudmessage(d:mins,s:":",d:secs,s:".0",d:mils;
                     HUDMSG_PLAIN, cp_number + 100, CR_WHITE, 1.95,
-                    0.8 - ((cp_number << 16) / 20), 0);
+                    0.8 - ((cp_number << FRACBITS) / 20), 0);
             } else {
                 hudmessage(d:mins,s:":",d:secs,s:".",d:mils;
                     HUDMSG_PLAIN, cp_number + 100, CR_WHITE, 1.95,
-                    0.8 - ((cp_number << 16) / 20), 0);
+                    0.8 - ((cp_number << FRACBITS) / 20), 0);
             }
         }
     }
@@ -254,44 +257,44 @@ function void print_time_neg(int p_time, int cp_number) {
         if (mils < 10) {
             hudmessage(s:"-",d:secs,s:".00",d:mils;
                 HUDMSG_PLAIN, cp_number + 100, CR_GREEN, 1.95,
-                0.8 - ((cp_number << 16) / 20), 0);
+                0.8 - ((cp_number << FRACBITS) / 20), 0);
         } else if (mils < 100) {
             hudmessage(s:"-",d:secs,s:".0",d:mils;
                 HUDMSG_PLAIN, cp_number + 100, CR_GREEN, 1.95,
-                0.8 - ((cp_number << 16) / 20), 0);
+                0.8 - ((cp_number << FRACBITS) / 20), 0);
         } else {
             hudmessage(s:"-",d:secs,s:".",d:mils;
                 HUDMSG_PLAIN, cp_number + 100, CR_GREEN, 1.95,
-                0.8 - ((cp_number << 16) / 20), 0);
+                0.8 - ((cp_number << FRACBITS) / 20), 0);
         }
     } else {
         if (secs < 10) {
             if (mils < 10) {
                 hudmessage(s:"-",d:mins,s:":0",d:secs,s:".00",d:mils;
                     HUDMSG_PLAIN, cp_number + 100, CR_GREEN, 1.95,
-                    0.8 - ((cp_number << 16) / 20), 0);
+                    0.8 - ((cp_number << FRACBITS) / 20), 0);
             } else if (mils < 100) {
                 hudmessage(s:"-",d:mins,s:":0",d:secs,s:".0",d:mils;
                     HUDMSG_PLAIN, cp_number + 100, CR_GREEN, 1.95,
-                    0.8 - ((cp_number << 16) / 20), 0);
+                    0.8 - ((cp_number << FRACBITS) / 20), 0);
             } else {
                 hudmessage(s:"-",d:mins,s:":0",d:secs,s:".",d:mils;
                     HUDMSG_PLAIN, cp_number + 100, CR_GREEN, 1.95,
-                    0.8 - ((cp_number << 16) / 20), 0);
+                    0.8 - ((cp_number << FRACBITS) / 20), 0);
             }
         } else {
             if (mils < 10) {
                 hudmessage(s:"-",d:mins,s:":",d:secs,s:".00",d:mils;
                     HUDMSG_PLAIN, cp_number + 100, CR_GREEN, 1.95,
-                    0.8 - ((cp_number << 16) / 20), 0);
+                    0.8 - ((cp_number << FRACBITS) / 20), 0);
             } else if (mils < 100) {
                 hudmessage(s:"-",d:mins,s:":",d:secs,s:".0",d:mils;
                     HUDMSG_PLAIN, cp_number + 100, CR_GREEN, 1.95,
-                    0.8 - ((cp_number << 16) / 20), 0);
+                    0.8 - ((cp_number << FRACBITS) / 20), 0);
             } else {
                 hudmessage(s:"-",d:mins,s:":",d:secs,s:".",d:mils;
                     HUDMSG_PLAIN, cp_number + 100, CR_GREEN, 1.95,
-                    0.8 - ((cp_number << 16) / 20), 0);
+                    0.8 - ((cp_number << FRACBITS) / 20), 0);
             }
         }
     }
@@ -307,44 +310,44 @@ function void print_time_pos(int p_time, int cp_number) {
         if (mils < 10) {
             hudmessage(s:"+",d:secs,s:".00",d:mils;
                 HUDMSG_PLAIN, cp_number + 100, CR_RED, 1.95,
-                0.8 - ((cp_number << 16) / 20), 0);
+                0.8 - ((cp_number << FRACBITS) / 20), 0);
         } else if (mils < 100) {
             hudmessage(s:"+",d:secs,s:".0",d:mils;
                 HUDMSG_PLAIN, cp_number + 100, CR_RED, 1.95,
-                0.8 - ((cp_number << 16) / 20), 0);
+                0.8 - ((cp_number << FRACBITS) / 20), 0);
         } else {
             hudmessage(s:"+",d:secs,s:".",d:mils;
                 HUDMSG_PLAIN, cp_number + 100, CR_RED, 1.95,
-                0.8 - ((cp_number << 16) / 20), 0);
+                0.8 - ((cp_number << FRACBITS) / 20), 0);
         }
     } else {
 		if (secs < 10) {
 	        if (mils < 10) {
             	hudmessage(s:"+",d:mins,s:":0",d:secs,s:".00",d:mils;
 	                HUDMSG_PLAIN, cp_number + 100, CR_RED, 1.95,
-                	0.8 - ((cp_number << 16) / 20), 0);
+                	0.8 - ((cp_number << FRACBITS) / 20), 0);
         	} else if (mils < 100) {
 	            hudmessage(s:"+",d:mins,s:":0",d:secs,s:".0",d:mils;
                 	HUDMSG_PLAIN, cp_number + 100, CR_RED, 1.95,
-                	0.8 - ((cp_number << 16) / 20), 0);
+                	0.8 - ((cp_number << FRACBITS) / 20), 0);
         	} else {
 	            hudmessage(s:"+",d:mins,s:":0",d:secs,s:".",d:mils;
                 	HUDMSG_PLAIN, cp_number + 100, CR_RED, 1.95,
-                	0.8 - ((cp_number << 16) / 20), 0);
+                	0.8 - ((cp_number << FRACBITS) / 20), 0);
         	}
 		} else {
 	        if (mils < 10) {
             	hudmessage(s:"+",d:mins,s:":",d:secs,s:".00",d:mils;
 	                HUDMSG_PLAIN, cp_number + 100, CR_RED, 1.95,
-                	0.8 - ((cp_number << 16) / 20), 0);
+                	0.8 - ((cp_number << FRACBITS) / 20), 0);
         	} else if (mils < 100) {
 	            hudmessage(s:"+",d:mins,s:":",d:secs,s:".0",d:mils;
                 	HUDMSG_PLAIN, cp_number + 100, CR_RED, 1.95,
-                	0.8 - ((cp_number << 16) / 20), 0);
+                	0.8 - ((cp_number << FRACBITS) / 20), 0);
         	} else {
 	            hudmessage(s:"+",d:mins,s:":",d:secs,s:".",d:mils;
                 	HUDMSG_PLAIN, cp_number + 100, CR_RED, 1.95,
-                	0.8 - ((cp_number << 16) / 20), 0);
+                	0.8 - ((cp_number << FRACBITS) / 20), 0);
         	}
 		}
 	}
@@ -355,7 +358,7 @@ function void clear_time(int cp_total) {
     for (int i = 0;i <= cp_total;i++) {
         hudmessage(s:"";
             HUDMSG_PLAIN, i + 100, CR_WHITE, 1.95,
-            0.8 - ((i << 16) / 20), 0);
+            0.8 - ((i << FRACBITS) / 20), 0);
     }
 }
 
@@ -524,18 +527,18 @@ function void log_time(int p_time) {
 // Function that converts a given number of tics to either minutes, seconds
 // or mileseconds
 function int to_mins(int tics) {
-    int mins = tics / (35 * 60);
+    int mins = tics / (TICRATE * 60);
     return mins;
 }
 
 function int to_secs(int tics) {
-    int secs = (tics / 35) % 60;
+    int secs = (tics / TICRATE) % 60;
     return secs;
 }
 
 function int to_mils(int tics) {
-    int mils = tics % 35;
-    mils = ((mils * 1000) / 35);
+    int mils = tics % TICRATE;
+    mils = ((mils * 1000) / TICRATE);
     return mils;
 }
 
@@ -552,7 +555,7 @@ bool z_tbypass; //used to check whether to bypass built in timelimit
 
 script 403 OPEN
 {
-	if (getcvar("luk_system") < 1) { delay(35); restart; }
+	if (getcvar("luk_system") < 1) { delay(TICRATE); restart; }
 		// Load high score finish time.
 		acs_ExecuteWait( 970, 0, LUK_RETQUERY_INT, "jrs_hs_time" );
 
@@ -593,7 +596,7 @@ script 403 OPEN
 
 script 402 ENTER //used to synchronise client with luk
 {
-	if (getcvar("luk_system") < 1) { delay(35); restart; }
+	if (getcvar("luk_system") < 1) { delay(TICRATE); restart; }
 	if (recdone == false)
 	{
 		ScriptWait(403);
@@ -646,7 +649,7 @@ script 401 (void) //displays final scores then exits
 	if (finaltimes[0][F_TIME] == 99999999) //if the highest ranking entry is 99999999 (indicating no time set)
 	{
 		printbold(s:"Wow, nodoby managed to beat the course! You guys suck."); //insult the players for being shit (as nobody managed to get a time)
-		delay(35*5);
+		delay(TICRATE*5);
 		Exit_Normal(0);
 	}
 	else
@@ -655,7 +658,7 @@ script 401 (void) //displays final scores then exits
 	}
 	if (finaltimes[1][0] == 99999999) //if the second highest ranking entry is 99999999 (indicating no time set)
 	{
-		delay(35*10); //wait, and then exit, don't display second place as he didn't get a time
+		delay(TICRATE*10); //wait, and then exit, don't display second place as he didn't get a time
 		Exit_Normal(0); 
 	}
 	else
@@ -664,7 +667,7 @@ script 401 (void) //displays final scores then exits
 	}
 	if (finaltimes[2][0] == 99999999) //if the third highest ranking entry is 99999999 (indicating no time set) and so on and so on...
 	{
-		delay(35*10);
+		delay(TICRATE*10);
 		Exit_Normal(0);
 	}
 	else
@@ -673,7 +676,7 @@ script 401 (void) //displays final scores then exits
 	}
 	if (finaltimes[3][0] == 99999999)
 	{
-		delay(35*10);
+		delay(TICRATE*10);
 		Exit_Normal(0);
 	}
 	else
@@ -682,14 +685,14 @@ script 401 (void) //displays final scores then exits
 	}
 	if (finaltimes[4][0] == 99999999)
 	{
-		delay(35*10);
+		delay(TICRATE*10);
 		Exit_Normal(0);
 	}
 	else
 	{
 		finaltime(finaltimes[4][F_TIME], finaltimes[4][F_NAME], 0.6, "\ce5th", 505);
 	}
-	delay(35*10);
+	delay(TICRATE*10);
 	Exit_Normal(0);
 }
 
@@ -744,33 +747,33 @@ script 407 OPEN //Waits a certain amount of time, shows leaderboard, and then ex
 	delay(1);
 	if (z_tbypass == true) //Check if the map disabled in built time limit
 		terminate;
-	if (getcvar("z_tlimit") == 0) {consolecommand("set z_tlimit 0"); delay(35); restart; } //Check if a timelimit has been set using z_tlimit
+	if (getcvar("z_tlimit") == 0) {consolecommand("set z_tlimit 0"); delay(TICRATE); restart; } //Check if a timelimit has been set using z_tlimit
 	print(d:getcvar("z_tlimit"), s:" minutes remaining!");
 	if (getcvar("z_tlimit") < 2)
 	{
-		delay(35*50);
+		delay(TICRATE*50);
 		print(s:"\cg10 SECONDS REMAINING!");
-		delay(35*10);
+		delay(TICRATE*10);
 		acs_execute(401,0);
 	}
 	else if (getcvar("z_tlimit") < 6)
 	{
-		delay(35*60*(getcvar("z_tlimit") - 1));
+		delay(TICRATE*60*(getcvar("z_tlimit") - 1));
 		print(s:"1 minute remaining!!");
-		delay(35*50);
+		delay(TICRATE*50);
 		print(s:"\cg10 SECONDS REMAINING!");
-		delay(35*10);
+		delay(TICRATE*10);
 		acs_execute(401,0);
 	}
 	else
 	{
-		delay(35*60*(getcvar("z_tlimit") - 5));
+		delay(TICRATE*60*(getcvar("z_tlimit") - 5));
 		print(s:"5 minutes remaining!!");
-		delay(35*60*4);
+		delay(TICRATE*60*4);
 		print(s:"1 minute remaining!!");
-		delay(35*50);
+		delay(TICRATE*50);
 		print(s:"\cg10 SECONDS REMAINING!");
-		delay(35*10);
+		delay(TICRATE*10);
 		acs_execute(401,0);
 	}
 }
