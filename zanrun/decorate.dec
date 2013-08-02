@@ -927,3 +927,209 @@ ACTOR BFG9000 : DoomWeapon {
 		Stop
 	}
 }
+
+//Doomplayer
+
+ACTOR DoomPlayer : PlayerPawn
+{
+	Speed 1
+	Health 100
+	Radius 16
+	Height 56
+	Mass 100
+	PainChance 255
+	Player.ColorRange 112, 127
+	Player.DisplayName "Marine"
+	Player.CrouchSprite "PLYC"
+	Player.StartItem "Pistol"
+	Player.StartItem "Fist"
+	Player.StartItem "Clip", 50
+	Player.WeaponSlot 1, Fist, Chainsaw
+	Player.WeaponSlot 2, Pistol
+	Player.WeaponSlot 3, Shotgun, SuperShotgun
+	Player.WeaponSlot 4, Chaingun, Minigun			// [BC] Create default binding for the minigun.
+	Player.WeaponSlot 5, RocketLauncher, GrenadeLauncher	// [BC] Create default binding for the grenade launcher.
+	Player.WeaponSlot 6, PlasmaRifle, Railgun		// [BC] Create default binding for the railgun.
+	Player.WeaponSlot 7, BFG9000, BFG10K			// [BC] Create default binding for the BFG10K.
+	States
+	{
+	Spawn:
+		PLAY A -1
+		Loop
+	See:
+		PLAY ABCD 4 
+		Loop
+	Missile:
+		PLAY E 12 
+		Goto Spawn
+	Melee:
+		PLAY F 6 BRIGHT
+		Goto Missile
+	Pain:
+		PLAY G 4 
+		PLAY G 4 A_Pain
+		Goto Spawn
+	Death:
+		PLAY H 0 A_PlayerSkinCheck("AltSkinDeath")
+	Death1:
+		PLAY H 10
+		PLAY I 10 A_PlayerScream
+		PLAY J 10 A_NoBlocking
+		PLAY KLM 10
+		PLAY N -1
+		Stop
+	XDeath:
+		PLAY O 0 A_PlayerSkinCheck("AltSkinXDeath")
+	XDeath1:
+		PLAY O 5
+		PLAY P 5 A_XScream
+		PLAY Q 5 A_NoBlocking
+		PLAY RSTUV 5
+		PLAY W -1
+		Stop
+	AltSkinDeath:
+		PLAY H 6
+		PLAY I 6 A_PlayerScream
+		PLAY JK 6
+		PLAY L 6 A_NoBlocking
+		PLAY MNO 6
+		PLAY P -1
+		Stop
+	AltSkinXDeath:
+		PLAY Q 5 A_PlayerScream
+		PLAY R 0 A_NoBlocking
+		PLAY R 5 A_SkullPop
+		PLAY STUVWX 5
+		PLAY Y -1
+		Stop
+	}
+}
+
+//Modify bulletpuff & plasmaball to not thrust by default
+
+ACTOR BulletPuff
+{
+  Game Doom
+  SpawnID 131
+  +NOBLOCKMAP
+  +NOGRAVITY
+  +ALLOWPARTICLES
+  +RANDOMIZE
+  +NODAMAGETHRUST //here
+  RenderStyle Translucent
+  Alpha 0.5
+  VSpeed 1
+  Mass 5
+  States
+  {
+  Spawn:
+    PUFF A 4 Bright
+    PUFF B 4
+    //TNT1 A 0 A_JumpIf(ACS_ExecuteWithResult(410, 0, 0, 0) == FALSE, 2)
+    // Intentional fall-through
+  Melee:
+    PUFF CD 4
+    Stop
+  }
+}
+
+ACTOR PlasmaBall
+{
+  Game Doom
+  SpawnID 51
+  Radius 13
+  Height 8
+  Speed 25
+  Damage 5
+  Projectile
+  +RANDOMIZE
+  +NODAMAGETHRUST
+  RenderStyle Add
+  Alpha 0.75
+  SeeSound "weapons/plasmaf"
+  DeathSound "weapons/plasmax"
+  Obituary "$OB_MPPLASMARIFLE" // "%o was melted by %k's plasma gun."
+  States
+  {
+  Spawn:
+    PLSS AB 6 Bright
+    Loop
+  Death:
+    PLSE ABCDE 4 Bright
+    Stop
+  }
+}
+
+//ijon's crazy rocket stuff
+
+actor Rocket
+{
+  	Game Doom
+  	SpawnID 127
+  	Radius 11
+  	Height 8
+  	Speed 20
+  	Projectile
+  	+RANDOMIZE
+  	+DEHEXPLOSION
+  	+ROCKETTRAIL
+	+MTHRUSPECIES //goes through players
+  	SeeSound "weapons/rocklf"
+  	DeathSound "weapons/rocklx"
+  	Obituary "$OB_MPROCKET" // "%o rode %k's rocket."
+    	Damage 0
+    	+BLOODLESSIMPACT
+ 
+    	States
+    	{
+  	Spawn:
+    	  MISL A 1 Bright
+    	  Loop
+      	Death: //ijon craziness
+          MISL B 0 bright ACS_ExecuteWithResult(1202, 1)
+          MISL B 0 bright A_ChangeFlag("FORCERADIUSDMG", 1)
+          MISL B 0 bright A_ChangeFlag("NODAMAGETHRUST", 1)
+          MISL B 0 bright A_Explode(random(1,8) * 20, 32, 0)
+          MISL B 0 bright A_ChangeFlag("FORCERADIUSDMG", 0)
+          MISL B 0 bright A_ChangeFlag("NODAMAGETHRUST", 0)
+          MISL B 0 bright A_Explode(128, 128, 1)
+          MISL B 0 bright ACS_ExecuteWithResult(1202, 0)
+          MISL B 8 bright
+          MISL C 6 bright
+          MISL D 4 bright
+          stop
+    	}
+}
+
+actor Trigger: CustomInventory
+{
+    +AUTOACTIVATE
+    Inventory.MaxAmount 0
+
+    States
+    {
+      Spawn:
+        TNT1 A 0
+        stop
+    }
+}
+
+actor DisableShootableFlag: Trigger
+{
+    States
+    {
+      Pickup:
+        TNT1 A 0 A_ChangeFlag("SHOOTABLE", 0)
+        stop
+    }
+}
+
+actor EnableShootableFlag: Trigger
+{
+    States
+    {
+      Pickup:
+        TNT1 A 0 A_ChangeFlag("SHOOTABLE", 1)
+        stop
+    }
+}

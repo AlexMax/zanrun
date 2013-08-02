@@ -783,6 +783,106 @@ script 408 (void) //Script for maps to activate should they want to bypass any b
 	z_tbypass = true;
 }
 
+//Ijontichy's acs scripts for making rocket splash not affect other people
+
+#define DEFAULTTID_SCRIPT 471
+
+function int unusedTID(int start, int end)
+{
+    int ret = start - 1;
+    int tidNum;
+
+    if (start > end) { start ^= end; end ^= start; start ^= end; }  // good ol' XOR swap
+    
+    while (ret++ != end)
+    {
+        if (ThingCount(0, ret) == 0)
+        {
+            return ret;
+        }
+    }
+    
+    return -1;
+}
+
+function int defaultTID(int def)
+{
+    return _defaulttid(def, 0);
+}
+
+function int _defaulttid(int def, int alwaysPropagate)
+{
+    if (ClassifyActor(0) & ACTOR_WORLD) { return 0; }
+
+    int tid = ActivatorTID();
+    int i, changed = 0;
+
+    if (ThingCount(0, tid) != 1)
+    {
+        tid = def;
+        changed = 1;
+        if (def <= 0)
+        {
+            i = random(12, 220);
+            tid = unusedTID(i*100, (i+100)*100);
+        }
+
+        Thing_ChangeTID(0, tid);
+    }
+
+    if ((changed || (alwaysPropagate == 1)) && (alwaysPropagate != 2))
+    {
+        ACS_ExecuteAlways(DEFAULTTID_SCRIPT, 0, tid,0,0);
+    }
+
+    return tid;
+}
+
+script DEFAULTTID_SCRIPT (int tid) clientside
+{
+    if (ConsolePlayerNumber() == -1) { terminate; }
+    Thing_ChangeTID(0, tid);
+}
+
+/*
+ *  End commonFuncs.h
+ */
+
+int PlayerTIDs[PLAYERMAX];
+
+script 1201 enter
+{
+    int pln = PlayerNumber();
+
+    while (1)
+    {
+        PlayerTIDs[pln] = defaultTID(0);
+        Delay(1);
+    }
+}
+
+script 1202 (int onOff, int xflags1, int xflags2)
+{
+    // calling from projectile?
+    if (onOff < 2 && onOff >= 0) { SetActivatorToTarget(0); }
+    onOff &= 1;
+
+    int i, exclude, success;
+    int mypln = PlayerNumber();
+
+    for (i = 0; i < PLAYERMAX; i++)
+    {
+        if (i >= 32) { exclude = xflags2 & (1 << (i-32)); }
+        else { exclude = xflags1 & (1 << i); }
+
+        success = PlayerInGame(i) && !(i == mypln || exclude);
+        if (!success) { continue; }
+
+        if (onOff) { GiveActorInventory(PlayerTIDs[i], "DisableShootableFlag", 1); }
+        else { GiveActorInventory(PlayerTIDs[i], "EnableShootableFlag", 1); }
+    }
+}
+
 //function to display leaderboard times
 function void finaltime(int p_time, int player, int height, str pos, int id) {
     int mins = to_mins(p_time);
