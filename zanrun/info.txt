@@ -1,4 +1,5 @@
 By AlexMax and Hypnotoad (aka Jroc aka ThePlayer)
-Scripts by: Alexmax - strun timer system, checkpoints system, decorate. Hypnotoad - luk interfacing, leaderboard ranking script, some clientsiding and bug fixes
+Zanrun scripts by: Alexmax - strun timer system, checkpoints system, decorate. Hypnotoad - luk interfacing, leaderboard ranking script, some clientsiding and bug fixes
 LUK scripts and utility by Positron
+Speedometer and notrhust rocket scrtipts/acs by ijontichy
 Additional thanks to: Wirtualnosc, AC3
