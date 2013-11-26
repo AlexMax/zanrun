@@ -12,6 +12,7 @@
 int p_starttic[PLAYERMAX];
 int p_checkpoint[PLAYERMAX][MAXCHECKPOINTS];
 int p_cstarttic[PLAYERMAX]; //clientside starttic [Jroc]
+int csmode; //clientside z_smode check
 
 // Stores the players best time on this map.
 int p_top_time[PLAYERMAX];
@@ -19,8 +20,22 @@ int p_top_checkpoint[PLAYERMAX][MAXCHECKPOINTS];
 
 // The default script to start the map with.
 script 100 ENTER {
+	//print(s:"100 ENTER"); //debug
     ClearInventory();
     SetActorProperty(0, APROP_Health, 100);
+	if (GetCvar("z_smode") == 1)
+	{
+		clearinventory();
+		acs_execute(219,0);
+		acs_execute(310,0,1); //set smode on clientside
+		delay(1);
+		giveinventory("fist",1);
+		giveinventory("pistol",1);
+	}
+	else
+	{
+		acs_execute(310,0,0);
+	}
 }
 
 // Stub for 'start clock' callback
@@ -33,7 +48,8 @@ script 120 (int cp_number) { }
 script 121 (void) { }
 
 // Start the clock for the player
-script 219(int cp_total) {   
+script 219(int cp_total) { 
+	//print(s:"219"); //debug
     // Clear the player's previous checkpoints 
     for (int i = 0;i <= cp_total;i++) {
         p_checkpoint[playernumber()][i] = 0;
@@ -116,6 +132,7 @@ script 221(int cp_total) {
 
 // Execute the ENTER script on respawn
 script 300 RESPAWN {
+	//print(s:"300 RESPAWN"); //debug
     ACS_Execute(100, 0);
 }
 
@@ -132,12 +149,19 @@ script 301 ENTER {
 
 // Timer, top time and speed on the HUD -- clientsided by Jroc, using a clientside start tic (p_cstarttic)
 script 302 ENTER CLIENTSIDE {
+	//print(s:"302 ENTER CLIENTSIDE"); //debug
     while(TRUE) {
+		//print(d:p_cstarttic[playernumber()]); //debug
         if (p_cstarttic[playernumber()] != 0) {
             // If we have a start tic to work from,
             // display the current time 
 			acs_executealways(307, 0, timer() - p_cstarttic[playernumber()]);
         }
+		else if(csmode == 1)
+		{
+			//print(s:"csmode=1"); //debug
+			acs_executealways(307, 0, timer() - p_cstarttic[playernumber()]);
+		}
         delay(1);
     }
 }
@@ -184,11 +208,25 @@ script 306 (int timeron) CLIENTSIDE //set clientside variables
 
 script 307 (int nowtimer) CLIENTSIDE //display timer clientside
 {
+	//print(s:"307"); //debug
 	now_time(nowtimer);
 }
 
 script 308 ENTER CLIENTSIDE {
-	p_cstarttic[playernumber()] = 0; //reset the clientside start tic on re-entering
+	if(GetCvar("csmode") == 0)
+		p_cstarttic[playernumber()] = 0; //reset the clientside start tic on re-entering
+}
+
+script 310 (int smodeon) CLIENTSIDE
+{
+	if (smodeon == 1)
+	{
+		csmode = 1;
+	}
+	else
+	{
+		csmode = 0;
+	}
 }
 
 // Function that displays times in the lower right hand corner
@@ -650,7 +688,7 @@ script 401 (void) //displays final scores then exits
 	{
 		printbold(s:"Wow, nodoby managed to beat the course! You guys suck."); //insult the players for being shit (as nobody managed to get a time)
 		delay(TICRATE*5);
-		Exit_Normal(0);
+		zr_exit();
 	}
 	else
 	{
@@ -659,7 +697,7 @@ script 401 (void) //displays final scores then exits
 	if (finaltimes[1][0] == 99999999) //if the second highest ranking entry is 99999999 (indicating no time set)
 	{
 		delay(TICRATE*10); //wait, and then exit, don't display second place as he didn't get a time
-		Exit_Normal(0); 
+		zr_exit(); 
 	}
 	else
 	{
@@ -668,7 +706,7 @@ script 401 (void) //displays final scores then exits
 	if (finaltimes[2][0] == 99999999) //if the third highest ranking entry is 99999999 (indicating no time set) and so on and so on...
 	{
 		delay(TICRATE*10);
-		Exit_Normal(0);
+		zr_exit();
 	}
 	else
 	{
@@ -677,7 +715,7 @@ script 401 (void) //displays final scores then exits
 	if (finaltimes[3][0] == 99999999)
 	{
 		delay(TICRATE*10);
-		Exit_Normal(0);
+		zr_exit();
 	}
 	else
 	{
@@ -686,14 +724,14 @@ script 401 (void) //displays final scores then exits
 	if (finaltimes[4][0] == 99999999)
 	{
 		delay(TICRATE*10);
-		Exit_Normal(0);
+		zr_exit();
 	}
 	else
 	{
 		finaltime(finaltimes[4][F_TIME], finaltimes[4][F_NAME], 0.6, "\ce5th", 505);
 	}
 	delay(TICRATE*10);
-	Exit_Normal(0);
+	zr_exit();
 }
 
 script 404 (int timec, int player) //for checking new time against record
@@ -740,6 +778,12 @@ script 405 ENTER //freeze players if the round is over
 script 406 RESPAWN
 {
 	acs_executealways(405, 0);
+}
+
+script 453 RETURN
+{
+	//print(s:"453 RETURN"); //debug
+	acs_executealways(100, 0);
 }
 
 script 407 OPEN //Waits a certain amount of time, shows leaderboard, and then exits. I originally wanted to use zandronum's in built timer but this turned out to not be practical
@@ -991,3 +1035,44 @@ function void show_therecord(int p_time) {
     }
 }
 
+//function to exit, adds interfacing to voter (vote wad by Hypnotoad)
+function void zr_exit(void)
+{
+	if (GetCvar("zanvoter") == 1)
+	{
+		acs_execute(501, 0);
+	}
+	else
+	{
+		Exit_Normal(0);
+	}
+}
+
+script 452 UNLOADING //SINGLE MODE
+{
+	if (GetCvar("z_smode") == 1)
+	{
+		int exiter;
+		int p_time = timer() - p_starttic[playernumber()];
+		p_top_time[playernumber()] = p_time;
+		for(int eter = 0; eter < 64; eter++)
+		{
+			if(Playeringame(eter) == FALSE)
+			{
+				continue;
+			}
+			else
+			{
+				exiter = eter;
+				break;
+			}
+		}
+		if (getcvar("luk_system") == 1)
+		{
+			if (p_time < temprecord && p_time != 0 || temprecord == 0 && p_time != 0)
+			{
+				JrsHsSave(exiter, p_time); //save record
+			}
+		}
+	}
+}
