@@ -7,6 +7,7 @@
 #define TICRATE 35
 #define FRACBITS 16
 #define FRACUNIT (1 << FRACBITS)
+#define SECONDS_IN_MINUTE 60
 
 // Designate the tics where player hits the start/cp
 int p_starttic[PLAYERMAX];
@@ -26,7 +27,7 @@ script 100 ENTER {
 	if (GetCvar("z_smode") == 1)
 	{
 		clearinventory();
-		acs_execute(219,0);
+		
 		acs_execute(310,0,1); //set smode on clientside
 		delay(1);
 		giveinventory("fist",1);
@@ -34,7 +35,7 @@ script 100 ENTER {
 	}
 	else
 	{
-		acs_execute(310,0,0);
+		acs_execute(310,0,0); //set smode off clientside
 	}
 }
 
@@ -123,7 +124,7 @@ script 221(int cp_total) {
         p_starttic[playernumber()] = 0;
 		acs_executealways( 306, 0, 0); //stop clientside timer [Jroc]
 		delay(3); //delay to compensate for client server desync [Jroc]
-		acs_executealways(307, 0, p_time);  //set the hud to show mot recent time clientside [Jroc]
+		acs_executealways(307, 0, p_time);  //set the hud to show most recent time clientside [Jroc]
         
         // Callback
         ACS_Execute(121, 0);
@@ -160,7 +161,7 @@ script 302 ENTER CLIENTSIDE {
 		else if(csmode == 1)
 		{
 			//print(s:"csmode=1"); //debug
-			acs_executealways(307, 0, timer() - p_cstarttic[playernumber()]);
+			//acs_executealways(307, 0, timer() - p_cstarttic[playernumber()]); //pointless
 		}
         delay(1);
     }
@@ -209,7 +210,7 @@ script 306 (int timeron) CLIENTSIDE //set clientside variables
 script 307 (int nowtimer) CLIENTSIDE //display timer clientside
 {
 	//print(s:"307"); //debug
-	now_time(nowtimer);
+		now_time(nowtimer);
 }
 
 script 308 ENTER CLIENTSIDE {
@@ -562,6 +563,80 @@ function void log_time(int p_time) {
     }
 }
 
+// Log time in the console and top of the screen for when world is activator
+function void log_timew(int p_time, int plnum) {
+    int mins = to_mins(p_time);
+    int secs = to_secs(p_time);
+    int mils = to_mils(p_time);
+
+    // Any minutes?
+    if (mins == 0) {
+		if (mils < 10) {
+            hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:secs,s:".00",d:mils;
+				HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+        } else if (mils < 100) {
+            hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:secs,s:".0",d:mils;
+				HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+        } else {
+            hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:secs,s:".",d:mils;
+				HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+        }
+    } else {
+        if (secs < 10) {
+            if (mils < 10) {
+                hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":0",d:secs,s:".00",d:mils;
+                    HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+            } else if (mils < 100) {
+                hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":0",d:secs,s:".0",d:mils;
+                    HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+            } else {
+                hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":0",d:secs,s:".",d:mils;
+                    HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+            }
+        } else {
+            if (mils < 10) {
+                hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":",d:secs,s:".00",d:mils;
+                    HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+            } else if (mils < 100) {
+                hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":",d:secs,s:".0",d:mils;
+                    HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+            } else {
+                hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":",d:secs,s:".",d:mils;
+                    HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+            }
+        }
+    }
+
+    // Any minutes?
+    if (mins == 0) {
+        if (mils < 10) {
+            log(s:"STRUN ",n:plnum + 1,s:": ",d:secs,s:".00",d:mils);
+        } else if (mils < 100) {
+            log(s:"STRUN ",n:plnum + 1,s:": ",d:secs,s:".0",d:mils);
+        } else {
+            log(s:"STRUN ",n:plnum + 1,s:": ",d:secs,s:".",d:mils);
+        }
+    } else {
+        if (secs < 10) {
+            if (mils < 10) {
+                log(s:"STRUN ",n:plnum + 1,s:": ",d:mins,s:":0",d:secs,s:".00",d:mils);
+            } else if (mils < 100) {
+                log(s:"STRUN ",n:plnum + 1,s:": ",d:mins,s:":0",d:secs,s:".0",d:mils);
+            } else {
+                log(s:"STRUN ",n:plnum + 1,s:": ",d:mins,s:":0",d:secs,s:".",d:mils);
+            }
+        } else {
+            if (mils < 10) {
+                log(s:"STRUN ",n:plnum + 1,s:": ",d:mins,s:":",d:secs,s:".00",d:mils);
+            } else if (mils < 100) {
+                log(s:"STRUN ",n:plnum + 1,s:": ",d:mins,s:":",d:secs,s:".0",d:mils);
+            } else {
+                log(s:"STRUN ",n:plnum + 1,s:": ",d:mins,s:":",d:secs,s:".",d:mils);
+            }
+        }
+    }
+}
+
 // Function that converts a given number of tics to either minutes, seconds
 // or mileseconds
 function int to_mins(int tics) {
@@ -632,7 +707,7 @@ script 403 OPEN
 		recdone = true;
 }
 
-script 402 ENTER //used to synchronise client with luk
+script 402 OPEN NET //used to synchronise client with luk
 {
 	if (getcvar("luk_system") < 1) { delay(TICRATE); restart; }
 	if (recdone == false)
@@ -646,6 +721,40 @@ script 402 ENTER //used to synchronise client with luk
 		if (temprecord != 0)
 			show_therecord(temprecord);
 	}
+}
+
+script 409 OPEN CLIENTSIDE //debug test
+{
+	consolecommand("puke 402");
+	delay(1);
+	if (PlayerInGame (ConsolePlayerNumber()) == FALSE)
+	for (int j = 300;j<=305;j++) {
+		hudmessage(s:"";HUDMSG_PLAIN,j,CR_WHITE,0,0,0);
+		}
+}
+
+script 410 OPEN { //basic timer
+	if(getcvar("z_smode") == 1)
+	{
+		int time = 0;
+
+		while ( true ) {
+			TimerShowTime( time );
+			time += 1;
+			delay( TICRATE );
+		}
+	}
+}
+
+function void TimerShowTime( int time ) {
+   setFont( "BIGFONT" );
+   hudMessage(
+      i : time / SECONDS_IN_MINUTE, 
+      s : "  :  ", 
+      i : ( time % SECONDS_IN_MINUTE ) / 10, 
+      s : "  ", i : time % 10 ;
+      HUDMSG_PLAIN, 985, CR_BLUE, 0.95, 0.95, 0
+   );
 }
 		
 script 401 (void) //displays final scores then exits
@@ -1052,8 +1161,8 @@ script 452 UNLOADING //SINGLE MODE
 {
 	if (GetCvar("z_smode") == 1)
 	{
-		int exiter;
-		int p_time = timer() - p_starttic[playernumber()];
+		int exiter = 64;
+		int p_time = timer();
 		p_top_time[playernumber()] = p_time;
 		for(int eter = 0; eter < 64; eter++)
 		{
@@ -1067,11 +1176,15 @@ script 452 UNLOADING //SINGLE MODE
 				break;
 			}
 		}
+		if (exiter == 64) //if nobody was in game, don't store record
+			terminate;
+		log_timew(p_time,exiter);
 		if (getcvar("luk_system") == 1)
 		{
 			if (p_time < temprecord && p_time != 0 || temprecord == 0 && p_time != 0)
 			{
 				JrsHsSave(exiter, p_time); //save record
+				log(n:exiter + 1,s:" beat the record!!");
 			}
 		}
 	}
