@@ -1072,10 +1072,10 @@ function void finaltime(int p_time, int player, int height, str pos, int id) {
                 hudmessagebold(s:pos,s:": ",n:player,s:" - ",d:mins,s:":",d:secs,s:".00",d:mils;
                     HUDMSG_PLAIN, id, CR_WHITE, 0.5, height, 0);
             } else if (mils < 100) {
-                hudmessagebold(s:pos,s:": ",n:player,s:" - ",d:secs,s:".0",d:mils;
+                hudmessagebold(s:pos,s:": ",n:player,s:" - ",d:mins,s:":",d:secs,s:".0",d:mils;
                     HUDMSG_PLAIN, id, CR_WHITE, 0.5, height, 0);
             } else {
-                hudmessagebold(s:pos,s:": ",n:player,s:" - ",d:secs,s:".",d:mils;
+                hudmessagebold(s:pos,s:": ",n:player,s:" - ",d:mins,s:":",d:secs,s:".",d:mils;
                     HUDMSG_PLAIN, id, CR_WHITE, 0.5, height, 0);
             }
         }
@@ -1127,7 +1127,7 @@ function void show_therecord(int p_time) {
                     HUDMSG_PLAIN, 511, CR_WHITE, 0.05, 0.4, 0);
             } else {
                 hudmessagebold(s:"Serverside record:\n",d:mins,s:":0",d:secs,s:".",d:mils;
-                    HUDMSG_PLAIN, 511, CR_WHITE, 0.05, 0.5, 0);
+                    HUDMSG_PLAIN, 511, CR_WHITE, 0.05, 0.4, 0);
             }
         } else {
             if (mils < 10) {
