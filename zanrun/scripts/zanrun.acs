@@ -170,6 +170,11 @@ script 302 ENTER CLIENTSIDE {
 // Pause timer on death
 script 303 DEATH {
 	p_starttic[playernumber()] = 0;
+	acs_execute(309,0);
+}
+
+script 309 (void) CLIENTSIDE {
+	p_cstarttic[playernumber()] = 0;
 }
 
 // Wipe that players' times from the records.and reset his HUD
@@ -1187,5 +1192,37 @@ script 452 UNLOADING //SINGLE MODE
 				log(n:exiter + 1,s:" beat the record!!");
 			}
 		}
+	}
+}
+
+// ===========PERSONAL TELEPORT==========
+
+script 460 (void) NET
+{
+	if (GetCvar("z_smode") == 0)
+	{
+		int x = GetActorX(0);
+		int y = GetActorY(0);
+		int z = GetActorZ(0);
+		int angle = GetActorAngle(0) >> 8;
+		Thing_Remove (1000+ playernumber());
+		spawn("MapSpot",x,y,z,1000+ playernumber(),angle);
+	}
+}
+
+script 461 (void) NET
+{
+	if (GetCvar("z_smode") == 0)
+	{
+		if (ThingCountName("MapSpot",1000+ playernumber()) == 0)
+		{
+			print(s:"No teleport destination set, did you spawn it too close to a wall?");
+			terminate;
+		}
+		p_starttic[playernumber()] = 0;
+		acs_execute(309,0);
+		thing_Move (0,1000+ playernumber(), 0);
+		Thing_Stop (0);
+		SetActorAngle(0,GetActorAngle(1000+ playernumber()));
 	}
 }
