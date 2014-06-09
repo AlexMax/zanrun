@@ -1,6 +1,6 @@
-VERSION = "b20"
+VERSION = "b22"
 
-ACC = acc\acc.exe
+ACC = acc\bcc.exe
 ACCFLAGS = -i acc
 
 ZIP = zip\zip.exe
@@ -10,9 +10,8 @@ SHELL = cmd.exe
 
 objects = \
 	zanrun\acs\constant.o \
-	zanrun\acs\luksys.o \
 	zanrun\acs\zanrun.o \
-	zanrun\acs\speedometer.o
+	zanrun\acs\speedo.o
 
 all: $(objects)
 	cd zanrun && ..\${ZIP} ${ZIPFLAGS} -r ..\zanrun$(VERSION).pk3 *
@@ -22,12 +21,10 @@ zanrun\acs:
 
 zanrun\acs\constant.o: zanrun\acs zanrun\scripts\luk\constants.acs
 	$(ACC) $(ACCFLAGS) zanrun\scripts\luk\constants.acs zanrun\acs\constant.o
-zanrun\acs\luksys.o: zanrun\acs zanrun\scripts\luk\luk.acs
-	$(ACC) $(ACCFLAGS) zanrun\scripts\luk\luk.acs zanrun\acs\luksys.o
 zanrun\acs\zanrun.o: zanrun\acs zanrun\scripts\zanrun.acs
 	$(ACC) $(ACCFLAGS) zanrun\scripts\zanrun.acs zanrun\acs\zanrun.o
-zanrun\acs\speedometer.o: zanrun\acs zanrun\scripts\speedometer\speedometer.c
-	$(ACC) $(ACCFLAGS) zanrun\scripts\speedometer\speedometer.c zanrun\acs\speedometer.o
+zanrun\acs\speedo.o: zanrun\acs zanrun\scripts\speedometer\speedo.c
+	$(ACC) $(ACCFLAGS) zanrun\scripts\speedometer\speedo.c zanrun\acs\speedo.o
 
 clean:
 	del $(objects) zanrun$(VERSION).pk3

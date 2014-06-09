@@ -1,5 +1,5 @@
+#library "speedo"
 #include "zcommon.acs"
-#library "speedometer"
 
 #include "speedfuncs.h"
 

@@ -1,6 +1,5 @@
 #library "zanrun"
 #include "zcommon.acs"
-#import "luk/luk.acs"
 
 #define PLAYERMAX 32
 #define MAXCHECKPOINTS 255
@@ -8,6 +7,7 @@
 #define FRACBITS 16
 #define FRACUNIT (1 << FRACBITS)
 #define SECONDS_IN_MINUTE 60
+#define MAXIDS 1000
 
 // Designate the tics where player hits the start/cp
 int p_starttic[PLAYERMAX];
@@ -19,18 +19,20 @@ int csmode; //clientside z_smode check
 int p_top_time[PLAYERMAX];
 int p_top_checkpoint[PLAYERMAX][MAXCHECKPOINTS];
 
+//============Personal Timer, Checkpoints and Personal Bests================
+
 // The default script to start the map with.
 script 100 ENTER {
 	//print(s:"100 ENTER"); //debug
     ClearInventory();
     SetActorProperty(0, APROP_Health, 100);
-	if (GetCvar("z_smode") == 1)
+	if (GetCvar("z_smode") == 1) //If survival mode is on
 	{
 		clearinventory();
 		
 		acs_execute(310,0,1); //set smode on clientside
 		delay(1);
-		giveinventory("fist",1);
+		giveinventory("fist",1); //Give default starting items on survival
 		giveinventory("pistol",1);
 	}
 	else
@@ -56,9 +58,9 @@ script 219(int cp_total) {
         p_checkpoint[playernumber()][i] = 0;
     }
 
-    p_starttic[playernumber()] = timer();
-	acs_executealways( 306, 0, 1); //start clientside timer [Jroc]
-    clear_time(cp_total);
+    p_starttic[playernumber()] = timer(); //set the player's start tic
+	acs_executealways( 306, 0, 1); //start clientside timer 
+    clear_time(cp_total); //clear checkpoints
     
     // Callback
     ACS_Execute(119, 0);
@@ -68,8 +70,8 @@ script 219(int cp_total) {
 script 220(int cp_number) {
     // Make sure the player hasn't already crossed this point in his run
     if (p_checkpoint[playernumber()][cp_number] == 0 && p_starttic[playernumber()] != 0) {
-        int p_time = timer() - p_starttic[playernumber()];
-        p_checkpoint[playernumber()][cp_number] = p_time;
+        int p_time = timer() - p_starttic[playernumber()]; //set your checkpoint time equal to the timer less start tic
+        p_checkpoint[playernumber()][cp_number] = p_time; //set checkpoint time
         
         if (p_top_checkpoint[playernumber()][cp_number] == 0) {
             // No prior time
@@ -91,8 +93,8 @@ script 220(int cp_number) {
 script 221(int cp_total) {
     // Make sure the player hasn't already crossed this point in his run
     if (p_checkpoint[playernumber()][cp_total] == 0 && p_starttic[playernumber()] != 0) {
-        int p_time = timer() - p_starttic[playernumber()];
-        p_checkpoint[playernumber()][cp_total] = p_time;
+        int p_time = timer() - p_starttic[playernumber()]; //set your finish time equal to the timer less start tic
+        p_checkpoint[playernumber()][cp_total] = p_time; //set checkpoint time
         
         // Did the player set his first time or beat his previous high score?
         if (p_top_time[playernumber()] == 0 || p_time <= p_top_time[playernumber()]) {
@@ -105,10 +107,10 @@ script 221(int cp_total) {
             
             // Copy the players time
             p_top_time[playernumber()] = p_time;
-			acs_executealways(404, 0, p_time, playernumber()); //ZANRUN EDIT, COMPARE TO RECORD
+			acs_executealways(404, 0, p_time, playernumber()); //compare this time to the record
             for (int i = 0;i <= cp_total;i++) {
                 p_top_checkpoint[playernumber()][i] = p_checkpoint[playernumber()][i];
-            }
+            } //set new top checkpoints
             
             // Update HUD with best time
             best_time(p_time);
@@ -122,9 +124,9 @@ script 221(int cp_total) {
         // Turn off the start tic, so the automatic HUD stops, then update
         // it ourselves with the most recent run time
         p_starttic[playernumber()] = 0;
-		acs_executealways( 306, 0, 0); //stop clientside timer [Jroc]
-		delay(3); //delay to compensate for client server desync [Jroc]
-		acs_executealways(307, 0, p_time);  //set the hud to show most recent time clientside [Jroc]
+		acs_executealways( 306, 0, 0); //stop clientside timer 
+		delay(3); //delay to compensate for client server desync 
+		acs_executealways(307, 0, p_time);  //set the hud to show most recent time clientside 
         
         // Callback
         ACS_Execute(121, 0);
@@ -148,7 +150,7 @@ script 301 ENTER {
 	hudmessage(s:"";HUDMSG_PLAIN,300,CR_WHITE,0,0,0); //clear current personal best (since it doesn't work via disconnect) [Jroc]
 }
 
-// Timer, top time and speed on the HUD -- clientsided by Jroc, using a clientside start tic (p_cstarttic)
+// Timer, top time and speed on the HUD -- clientsided using a clientside start tic (p_cstarttic)
 script 302 ENTER CLIENTSIDE {
 	//print(s:"302 ENTER CLIENTSIDE"); //debug
     while(TRUE) {
@@ -170,22 +172,22 @@ script 302 ENTER CLIENTSIDE {
 // Pause timer on death
 script 303 DEATH {
 	p_starttic[playernumber()] = 0;
-	acs_execute(309,0);
+	acs_execute(309,0); //set clientside start tic to 0 also
 }
 
 script 309 (void) CLIENTSIDE {
 	p_cstarttic[playernumber()] = 0;
 }
 
-// Wipe that players' times from the records.and reset his HUD
-// edited by Jroc, disconnect is activated by world and does NOT clear spectator only hud messages but intead clears everyone's
+// Wipe that players' times from the records and reset his HUD
+// edited: disconnect is activated by world and does NOT clear spectator only hud messages but intead clears everyone's
 script 304 (int p_number) DISCONNECT {
 	p_starttic[p_number] = 0;
 	p_top_time[p_number] = 0;
 	p_cstarttic[playernumber()] = 0;
 	for (int i = 0;i<MAXCHECKPOINTS;i++) {
-		p_checkpoint[32][i] = 0;
-		p_top_checkpoint[32][i] = 0;
+		p_checkpoint[p_number][i] = 0;
+		p_top_checkpoint[p_number][i] = 0;
 	}
 	
 	//clear_time(255);
@@ -223,16 +225,12 @@ script 308 ENTER CLIENTSIDE {
 		p_cstarttic[playernumber()] = 0; //reset the clientside start tic on re-entering
 }
 
-script 310 (int smodeon) CLIENTSIDE
+script 310 (int smodeon) CLIENTSIDE //clientside csmode switcher
 {
 	if (smodeon == 1)
-	{
 		csmode = 1;
-	}
 	else
-	{
 		csmode = 0;
-	}
 }
 
 // Function that displays times in the lower right hand corner
@@ -450,6 +448,50 @@ function void best_time(int p_time) {
     }
 }
 
+function void best_timealltime(int p_time) {
+    int mins = to_mins(p_time);
+    int secs = to_secs(p_time);
+    int mils = to_mils(p_time);
+
+    // Any minutes?
+    if (mins == 0) {
+        if (mils < 10) {
+            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".00",d:mils;
+                HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
+        } else if (mils < 100) {
+            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".0",d:mils;
+                HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
+        } else {
+            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".",d:mils;
+                HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
+        }
+    } else {
+        if (secs < 10) {
+            if (mils < 10) {
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".00",d:mils;
+                    HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
+            } else if (mils < 100) {
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".0",d:mils;
+                    HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
+            } else {
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".",d:mils;
+                    HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
+            }
+        } else {
+            if (mils < 10) {
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".00",d:mils;
+                    HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
+            } else if (mils < 100) {
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".0",d:mils;
+                    HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
+            } else {
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".",d:mils;
+                    HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
+            }
+        }
+    }
+}
+
 function void now_time(int p_time) {
     int mins = to_mins(p_time);
     int secs = to_secs(p_time);
@@ -642,7 +684,7 @@ function void log_timew(int p_time, int plnum) {
     }
 }
 
-// Function that converts a given number of tics to either minutes, seconds
+// Functions that converts a given number of tics to either minutes, seconds
 // or mileseconds
 function int to_mins(int tics) {
     int mins = tics / (TICRATE * 60);
@@ -660,75 +702,58 @@ function int to_mils(int tics) {
     return mils;
 }
 
-//==========ZANRUN==================
+//=======================DATABASE INTERFACING=======================
 #define F_TIME 0
 #define F_NAME 1
 
 int finaltimes[PLAYERMAX][2]; //times for end map leaderboard
-int temprecord; //temporary variable for storing record
-bool recdone;
-int _jrs_hs_author[ LUK_MAX_STR_VALUE_SIZE ]; //record holder
+int alltimes[MAXIDS][2]; //all time top times
+int temprecord[PLAYERMAX]; //temporary variable for storing record
 bool roundover;
 bool z_tbypass; //used to check whether to bypass built in timelimit
+int startplayercount;
 
-script 403 OPEN
+script 400 ENTER
 {
-	if (getcvar("luk_system") < 1) { delay(TICRATE); restart; }
-		// Load high score finish time.
-		acs_ExecuteWait( 970, 0, LUK_RETQUERY_INT, "jrs_hs_time" );
-
-		int result = LukGetQueryResult();
-		if ( result != LUK_RESULT_OK ) {
-			// If luk returns an error code, that means no high score is set.
-			if ( result == LUK_RESULT_FAILED ) {
-				printbold(s:"No high score set for this map");
-			}
-			// Error.
-			else {
-				printbold(s:"Record return error");
-			}
-			recdone = true;
-			temprecord = 0;
-			terminate;
-		}
-
-		temprecord = LukGetData(); //copy record time to variable
-		acs_ExecuteWait( 970, 0, LUK_RETQUERY_STR, "jrs_hs_author" );
-		if ( result != LUK_RESULT_OK ) {
-			// If luk returns an error code, that means no high score is set.
-			if ( result == LUK_RESULT_FAILED ) {
-				printbold(s:"No high score set for this map");
-			}
-			// Error.
-			else {
-				printbold(s:"Record return error");
-			}
-			recdone = true;
-			temprecord = 0;
-			terminate;
-		}
-		
-		JrsHsSetAuthor(); //copy record author to new variable
-		recdone = true;
-}
-
-script 402 OPEN NET //used to synchronise client with luk
-{
-	if (getcvar("luk_system") < 1) { delay(TICRATE); restart; }
-	if (recdone == false)
+	str yourname = strparam(n:0);
+	if (GetDBEntryInt ("PlayerIds", yourname ) == 0)
 	{
-		ScriptWait(403);
-		if (temprecord != 0)
-			show_therecord(temprecord);
+		for (int i = 1; i < MAXIDS; i++)
+		{
+			str playerid = strparam(i:i);
+			if (StrLen(GetDBEntryString ("PlayerNames", playerid )) == 0 || GetDBEntryString ("PlayerNames", playerid ) == "")
+			{
+				SetDBEntryString ("PlayerNames", playerid, yourname);
+				SetDBEntryString ("PlayerIds", yourname, playerid);
+				break;
+			}
+		}
 	}
-	else
+	str yourid = strparam(i:GetDBEntryInt ("PlayerIds", yourname ));
+	str maplumppbs = strparam(n:PRINTNAME_LEVEL,s:"pbs");
+	if (GetDBEntryInt (maplumppbs,yourid) != 0)
 	{
-		if (temprecord != 0)
-			show_therecord(temprecord);
+		best_timealltime(GetDBEntryInt (maplumppbs,yourid));
 	}
 }
 
-script 409 OPEN CLIENTSIDE //debug test
+script 402 OPEN NET
+{
+	delay(10);
+	str maplump = strparam(n:PRINTNAME_LEVEL);
+	if (GetDBEntryInt (maplump, "MapRecordTime" ) != 0)
+	{
+		show_author(0.05,0.43, "");
+		show_therecord(GetDBEntryInt (maplump, "MapRecordTime" ));
+	}
+}
+
+script 403 ENTER CLIENTSIDE
+{
+	consolecommand("puke 402");
+}
+
+script 409 OPEN CLIENTSIDE //this is for spectators to see the record
 {
 	consolecommand("puke 402");
 	delay(1);
@@ -764,7 +789,9 @@ function void TimerShowTime( int time ) {
 		
 script 401 (void) //displays final scores then exits
 {	
+	delay(1);
 	roundover = true; //declare the round over for enter and respawn to freeze you
+	delay(5);
 	for (int j = 0;j<=999;j++) {
 		hudmessage(s:""; HUDMSG_PLAIN, j, CR_WHITE, 0, 0, 0); //clear hud messages
 	}
@@ -817,7 +844,7 @@ script 401 (void) //displays final scores then exits
 	{
 		finaltime(finaltimes[1][F_TIME], finaltimes[1][F_NAME], 0.3, "\cb2nd", 502); //otherwise show second place
 	}
-	if (finaltimes[2][0] == 99999999) //if the third highest ranking entry is 99999999 (indicating no time set) and so on and so on...
+	if (finaltimes[2][0] == 99999999) //if the third highest ranking entry is 99999999 (indicating no time set) and so on...
 	{
 		delay(TICRATE*10);
 		zr_exit();
@@ -850,30 +877,31 @@ script 401 (void) //displays final scores then exits
 
 script 404 (int timec, int player) //for checking new time against record
 {
-	if (getcvar("luk_system") == 1)
+	str maplump = strparam(n:PRINTNAME_LEVEL);
+	if (timec < GetDBEntryInt (maplump, "MapRecordTime" ) && timec != 0 || GetDBEntryInt (maplump, "MapRecordTime" ) == 0 && timec != 0) //if the time is quicker than record
 	{
-		if (timec < temprecord && timec != 0 || temprecord == 0 && timec != 0)
-		{
-			JrsHsSave(player, timec); //save record
-			temprecord = timec;
-			acs_ExecuteWait( 970, 0, LUK_RETQUERY_STR, "jrs_hs_author" );
-			int result = LukGetQueryResult();
-			if ( result != LUK_RESULT_OK ) {
-				// If luk returns an error code, that means no high score is set.
-				if ( result == LUK_RESULT_FAILED ) {
-					printbold(s:"Error requesting record");
-				}
-				// Error.
-				else {
-					printbold(s:"Error requesting record");
-				}
-				terminate;
-			}		
-			JrsHsSetAuthor();
-			show_therecord(temprecord); //update hud
-			printbold(n:player + 1,s:" just set a new record!");
-		}
+		str recauthor = strparam(n:player + 1);
+		SetDBEntryString (maplump, "MapRecordAuthor", recauthor );
+		SetDBEntryInt (maplump, "MapRecordTime", timec );
+		printbold(s:"record has been set"); //debug
+		show_author(0.05,0.43, "");
+		show_therecord(GetDBEntryInt (maplump, "MapRecordTime" ));
 	}
+	str maplumppbs = strparam(n:PRINTNAME_LEVEL,s:"pbs");
+	str yourname = strparam(n:0);
+	if (GetDBEntryInt ("PlayerIds", yourname ) == 0)
+		terminate;
+	str yourid = strparam(i:GetDBEntryInt ("PlayerIds", yourname ));
+	if (timec < GetDBEntryInt (maplumppbs,yourid) && timec != 0)  
+	{
+		SetDBEntryInt (maplumppbs, yourid, timec );
+		best_timealltime(GetDBEntryInt (maplumppbs,yourid));
+	}
+	else if (GetDBEntryInt (maplumppbs,yourid) == 0 && timec != 0)
+	{
+		SetDBEntryInt (maplumppbs, yourid, timec );
+		best_timealltime(GetDBEntryInt (maplumppbs,yourid));
+	}	
 }
 
 script 405 ENTER //freeze players if the round is over
@@ -897,7 +925,7 @@ script 406 RESPAWN
 script 453 RETURN
 {
 	//print(s:"453 RETURN"); //debug
-	acs_executealways(100, 0);
+	acs_executealways(100, 0); //probably useless
 }
 
 script 407 OPEN //Waits a certain amount of time, shows leaderboard, and then exits. I originally wanted to use zandronum's in built timer but this turned out to not be practical
@@ -941,7 +969,7 @@ script 408 (void) //Script for maps to activate should they want to bypass any b
 	z_tbypass = true;
 }
 
-//Ijontichy's acs scripts for making rocket splash not affect other people
+//Ijontichy's acs scripts for making rocket splash not affect other people, don't ask me how this works
 
 #define DEFAULTTID_SCRIPT 471
 
@@ -1008,7 +1036,7 @@ script DEFAULTTID_SCRIPT (int tid) clientside
 
 int PlayerTIDs[PLAYERMAX];
 
-script 1201 enter
+script 653 enter
 {
     int pln = PlayerNumber();
 
@@ -1019,7 +1047,7 @@ script 1201 enter
     }
 }
 
-script 1202 (int onOff, int xflags1, int xflags2)
+script 654 (int onOff, int xflags1, int xflags2)
 {
     // calling from projectile?
     if (onOff < 2 && onOff >= 0) { SetActivatorToTarget(0); }
@@ -1086,26 +1114,74 @@ function void finaltime(int p_time, int player, int height, str pos, int id) {
         }
     }
 }
-//saves the record to luk database
-function void JrsHsSave( int player, int tics ) { 
-	LukStoreName( "jrs_hs_author", player );
-	LukStoreInt( "jrs_hs_time", tics );
-	LukStoreDate( "jrs_hs_rdate" );
-}
-//retrieves record author from luk database
-function void JrsHsSetAuthor( void ) {
-   for ( int c = 0; c < LUK_MAX_STR_VALUE_SIZE; c += 1 ) {
-      _jrs_hs_author[ c ] = _luk_str_value[ c ];
 
-      if ( _luk_str_value[ c ] == '\0' ) {
-         break;
-      }
-   }
+function void alltime(int p_time, str player, int height, str pos, int id) {
+    int mins = to_mins(p_time);
+    int secs = to_secs(p_time);
+    int mils = to_mils(p_time);
+	setfont("bigfont");
+
+    // Any minutes?
+    if (mins == 0) {
+        if (mils < 10) {
+            hudmessagebold(s:pos,s:": ",s:player,s:" - ",d:secs,s:".00",d:mils;
+                HUDMSG_PLAIN, id, CR_WHITE, 0.5, height, 0);
+        } else if (mils < 100) {
+            hudmessagebold(s:pos,s:": ",s:player,s:" - ",d:secs,s:".0",d:mils;
+                HUDMSG_PLAIN, id, CR_WHITE, 0.5, height, 0);
+        } else {
+            hudmessagebold(s:pos,s:": ",s:player,s:" - ",d:secs,s:".",d:mils;
+                HUDMSG_PLAIN, id, CR_WHITE, 0.5, height, 0);
+        }
+    } else {
+        if (secs < 10) {
+            if (mils < 10) {
+                hudmessagebold(s:pos,s:": ",s:player,s:" - ",d:mins,s:":0",d:secs,s:".00",d:mils;
+                    HUDMSG_PLAIN, id, CR_WHITE, 0.5, height, 0);
+            } else if (mils < 100) {
+                hudmessagebold(s:pos,s:": ",s:player,s:" - ",d:mins,s:":0",d:secs,s:".0",d:mils;
+                    HUDMSG_PLAIN, id, CR_WHITE, 0.5, height, 0);
+            } else {
+                hudmessagebold(s:pos,s:": ",s:player,s:" - ",d:mins,s:":0",d:secs,s:".",d:mils;
+                    HUDMSG_PLAIN, id, CR_WHITE, 0.5, height, 0);
+            }
+        } else {
+            if (mils < 10) {
+                hudmessagebold(s:pos,s:": ",s:player,s:" - ",d:mins,s:":",d:secs,s:".00",d:mils;
+                    HUDMSG_PLAIN, id, CR_WHITE, 0.5, height, 0);
+            } else if (mils < 100) {
+                hudmessagebold(s:pos,s:": ",s:player,s:" - ",d:mins,s:":",d:secs,s:".0",d:mils;
+                    HUDMSG_PLAIN, id, CR_WHITE, 0.5, height, 0);
+            } else {
+                hudmessagebold(s:pos,s:": ",s:player,s:" - ",d:mins,s:":",d:secs,s:".",d:mils;
+                    HUDMSG_PLAIN, id, CR_WHITE, 0.5, height, 0);
+            }
+        }
+    }
 }
+
 //shows the record and record holder
+function void show_author(int posx, int posy, int modifier)
+{
+	str maplump = strparam(n:PRINTNAME_LEVEL);
+	if (getcvar("z_smode") == 0)
+	{
+		hudmessagebold(s:"Record set by: ",s:GetDBEntryString (maplump, "MapRecordAuthor" ), s:"\n",s:modifier;
+        HUDMSG_PLAIN, 512, CR_WHITE, posx, posy, 0);
+	}
+	else if (startplayercount == 0 || startplayercount == 1)
+	{
+		hudmessagebold(s:"Record set by: ",s : GetDBEntryString (maplump, "MapRecordAuthor" ), s:"\n",s:modifier;
+        HUDMSG_PLAIN, 512, CR_WHITE, posx, posy, 0);
+	}
+	else
+	{
+		hudmessagebold(s:"Record by multiple authors", s:"\n",s:modifier,s:"\n",s:"(puke 455 for authors)";
+        HUDMSG_PLAIN, 512, CR_WHITE, posx, posy, 0);
+	}
+}
 function void show_therecord(int p_time) {
-	hudmessagebold(s:"Record set by: ",a : _jrs_hs_author;
-        HUDMSG_PLAIN, 512, CR_WHITE, 0.05, 0.43, 0); //record author is stored in an array of characters
+ //record author is stored in an array of characters
     int mins = to_mins(p_time);
     int secs = to_secs(p_time);
     int mils = to_mils(p_time);
@@ -1152,6 +1228,20 @@ function void show_therecord(int p_time) {
 //function to exit, adds interfacing to voter (vote wad by Hypnotoad)
 function void zr_exit(void)
 {
+	acs_execute(456,0);
+	/*
+	if (GetCvar("zanvoter") == 1)
+	{
+		acs_execute(501, 0);
+	}
+	else
+	{
+		Exit_Normal(0);
+	}*/
+}
+
+function void zr_exit2(void)
+{
 	if (GetCvar("zanvoter") == 1)
 	{
 		acs_execute(501, 0);
@@ -1162,13 +1252,113 @@ function void zr_exit(void)
 	}
 }
 
+script 456 (void)
+{
+	int entries;
+	str maplumppbs = strparam(n:PRINTNAME_LEVEL,s:"pbs");
+	for (int j = 0;j<=999;j++) {
+		hudmessage(s:""; HUDMSG_PLAIN, j, CR_WHITE, 0, 0, 0); //clear hud messages
+	for (int herp = 0; herp < MAXIDS; herp++) //for each entry in alltimes
+	{
+		str herpid = strparam(i:herp + 1);
+		if(StrLen(GetDBEntryString ("PlayerNames", herpid )) == 0)
+		{
+			entries = herp + 1;
+			break;
+		}
+		alltimes[herp][F_TIME] = GetDBEntryInt (maplumppbs,herpid); //set the value at index "herp" to the top time of player "herp"
+		alltimes[herp][F_NAME] = GetDBEntryString ("PlayerNames", herpid );
+	}
+	log(s:"first loop done");
+	for (int derp = 0; derp < MAXIDS; derp++)
+	{
+		if (alltimes[derp][F_TIME] == 0) //if an entry has a top time of zero...
+			alltimes[derp][F_TIME] = 99999999; //set it to a huge number (so it doesn't affect sorting)
+	}
+	log(s:"second loop done");
+	int temp = 0;
+	int temp2 = 0;
+    for (int write = 0; write < entries; write++) //bubble sort
+    {
+		for (int sort = 0; sort < entries - 1; sort++)
+        {
+			if (alltimes[sort][F_TIME] > alltimes[sort + 1][F_TIME])
+            {
+				temp = alltimes[sort + 1][F_TIME];
+                alltimes[sort + 1][F_TIME] = alltimes[sort][F_TIME];
+                alltimes[sort][F_TIME] = temp;
+                temp2 = alltimes[sort + 1][F_NAME];
+                alltimes[sort + 1][F_NAME] = alltimes[sort][F_NAME];
+                alltimes[sort][F_NAME] = temp2;
+            }
+        }
+    }
+	log(s:"3rd loop done");
+	setfont("BIGFONT");
+	hudmessagebold(s:"All Time Top Five"; HUDMSG_PLAIN, 500, CR_WHITE, 0.5, 0.1, 0);
+
+	if (alltimes[0][F_TIME] == 99999999) //if the highest ranking entry is 99999999 (indicating no time set)
+	{
+		printbold(s:"So some weird glitch has happened."); 
+		delay(TICRATE*5);
+		zr_exit2();
+	}
+	else
+	{
+		alltime(alltimes[0][F_TIME], alltimes[0][F_NAME], 0.2, "\ca1st", 501); //otherwise show the highest ranking entry as first place
+	}
+	if (alltimes[1][0] == 99999999) //if the second highest ranking entry is 99999999 (indicating no time set)
+	{
+		delay(TICRATE*10); //wait, and then exit, don't display second place as he didn't get a time
+		zr_exit2(); 
+	}
+	else
+	{
+		alltime(alltimes[1][F_TIME], alltimes[1][F_NAME], 0.3, "\cb2nd", 502); //otherwise show second place
+	}
+	if (alltimes[2][0] == 99999999) //if the third highest ranking entry is 99999999 (indicating no time set) and so on...
+	{
+		delay(TICRATE*10);
+		zr_exit2();
+	}
+	else
+	{
+		alltime(alltimes[2][F_TIME], alltimes[2][F_NAME], 0.4, "\cc3rd", 503);
+	}
+	if (alltimes[3][0] == 99999999)
+	{
+		delay(TICRATE*10);
+		zr_exit2();
+	}
+	else
+	{
+		alltime(alltimes[3][F_TIME], alltimes[3][F_NAME], 0.5, "\cd4th", 504);
+	}
+	if (alltimes[4][0] == 99999999)
+	{
+		delay(TICRATE*10);
+		zr_exit2();
+	}
+	else
+	{
+		alltime(alltimes[4][F_TIME], alltimes[4][F_NAME], 0.6, "\ce5th", 505);
+	}
+	delay(TICRATE*10);
+	zr_exit2();
+}
+	
+}
+
+int exiter[4];
+
 script 452 UNLOADING //SINGLE MODE
 {
 	if (GetCvar("z_smode") == 1)
 	{
-		int exiter = 64;
+		exiter[0] = 64;
 		int p_time = timer();
 		p_top_time[playernumber()] = p_time;
+		int playeri = 0;
 		for(int eter = 0; eter < 64; eter++)
 		{
 			if(Playeringame(eter) == FALSE)
@@ -1177,22 +1367,48 @@ script 452 UNLOADING //SINGLE MODE
 			}
 			else
 			{
-				exiter = eter;
-				break;
+				exiter[playeri] = eter;
+				if (playeri + 1 == startplayercount || playeri + 1 == 4)
+					break;
+				playeri++;
+				continue;
 			}
 		}
-		if (exiter == 64) //if nobody was in game, don't store record
+		if (exiter[0] == 64) //if nobody was in game, don't store record
 			terminate;
-		log_timew(p_time,exiter);
-		if (getcvar("luk_system") == 1)
+		log_timew(p_time,exiter[0]);
+		if (TRUE)
 		{
-			if (p_time < temprecord && p_time != 0 || temprecord == 0 && p_time != 0)
+			if (p_time < temprecord[0] && p_time != 0 || temprecord[0] == 0 && p_time != 0)
 			{
-				JrsHsSave(exiter, p_time); //save record
-				log(n:exiter + 1,s:" beat the record!!");
+				log(n:exiter[0] + 1,s:" beat the record!!");
+				int skill = getcvar("skill");
+				int players = startplayercount;
+				int skeytime = strparam(s:"smode_skill",d:skill,s:"_players",d:startplayercount,s:"_time");
+				int skeyauthor = strparam(s:"smode_skill",d:skill,s:"_players",d:startplayercount,s:"_author");
+				int skeydate = strparam(s:"smode_skill",d:skill,s:"_players",d:startplayercount,s:"_date");
+				if (playeri > 0) //save additional authors
+				{
+					for (int i = 1; i < playeri + 1; i++)
+					{
+						int addauthor = strparam(s:skeyauthor,d:i+1);
+					}
+				}
 			}
 		}
 	}
+}
+
+
+script 455 (void) NET
+{
+	//print(s:tempauthors[0],s:"\n",s:tempauthors[1],s:"\n",s:tempauthors[2],s:"\n",s:tempauthors[3]);
+	str maplumppbs = strparam(n:PRINTNAME_LEVEL,s:"pbs");
+	str yourname = strparam(n:0);
+	if (GetDBEntryInt ("PlayerIds", yourname ) == 0)
+		terminate;
+	str yourid = strparam(i:GetDBEntryInt ("PlayerIds", yourname ));
+	print(s:"Your best: ",i:GetDBEntryInt (maplumppbs,yourid));
 }
 
 // ===========PERSONAL TELEPORT==========
@@ -1221,7 +1437,7 @@ script 461 (void) NET
 		}
 		p_starttic[playernumber()] = 0;
 		acs_execute(309,0);
-		thing_Move (0,1000+ playernumber(), 0);
+		thing_Move (0,1000+ playernumber(), 1);
 		Thing_Stop (0);
 		SetActorAngle(0,GetActorAngle(1000+ playernumber()));
 	}
