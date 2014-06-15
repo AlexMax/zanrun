@@ -19,6 +19,13 @@ int csmode; //clientside z_smode check
 int p_top_time[PLAYERMAX];
 int p_top_checkpoint[PLAYERMAX][MAXCHECKPOINTS];
 
+//For the teleporter
+
+int GotRL[PLAYERMAX]; //track player's rockets for rjump and ctf flag running
+int rammo[PLAYERMAX];
+int playerhealth[PLAYERMAX];
+int playerarmor[PLAYERMAX];
+
 //============Personal Timer, Checkpoints and Personal Bests================
 
 // The default script to start the map with.
@@ -610,8 +617,8 @@ function void log_time(int p_time) {
     }
 }
 
-// Log time in the console and top of the screen for when world is activator
-function void log_timew(int p_time, int plnum) {
+// Print time for unloading
+function void exit_time(int p_time, int plnum) {
     int mins = to_mins(p_time);
     int secs = to_secs(p_time);
     int mils = to_mils(p_time);
@@ -619,37 +626,28 @@ function void log_timew(int p_time, int plnum) {
     // Any minutes?
     if (mins == 0) {
 		if (mils < 10) {
-            hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:secs,s:".00",d:mils;
-				HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+            printbold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:secs,s:".00",d:mils);
         } else if (mils < 100) {
-            hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:secs,s:".0",d:mils;
-				HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+            printbold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:secs,s:".0",d:mils);
         } else {
-            hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:secs,s:".",d:mils;
-				HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+            printbold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:secs,s:".",d:mils);
         }
     } else {
         if (secs < 10) {
             if (mils < 10) {
-                hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":0",d:secs,s:".00",d:mils;
-                    HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+                printbold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":0",d:secs,s:".00",d:mils);
             } else if (mils < 100) {
-                hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":0",d:secs,s:".0",d:mils;
-                    HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+               printbold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":0",d:secs,s:".0",d:mils);
             } else {
-                hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":0",d:secs,s:".",d:mils;
-                    HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+                printbold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":0",d:secs,s:".",d:mils);
             }
         } else {
             if (mils < 10) {
-                hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":",d:secs,s:".00",d:mils;
-                    HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+                printbold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":",d:secs,s:".00",d:mils);
             } else if (mils < 100) {
-                hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":",d:secs,s:".0",d:mils;
-                    HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+                printbold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":",d:secs,s:".0",d:mils);
             } else {
-                hudmessagebold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":",d:secs,s:".",d:mils;
-                    HUDMSG_FADEOUT | HUDMSG_LOG, 302, CR_GOLD, 1.5, 0.05, 5.0);
+                printbold(s:"Time performed by ",n:plnum + 1,s:": \cf",d:mins,s:":",d:secs,s:".",d:mils);
             }
         }
     }
@@ -712,13 +710,16 @@ int temprecord[PLAYERMAX]; //temporary variable for storing record
 bool roundover;
 bool z_tbypass; //used to check whether to bypass built in timelimit
 int startplayercount;
+int skill;
 
-script 400 ENTER
+script 400 ENTER NET
 {
 	str yourname = strparam(n:0);
-	if (GetDBEntryInt ("PlayerIds", yourname ) == 0)
+	//print(s:"400 executing (debug)");
+	if (GetDBEntryInt ("PlayerIds", yourname ) == 0) //if there is no ID associated with your name
 	{
-		for (int i = 1; i < MAXIDS; i++)
+		//print(s:"making account (debug)");
+		for (int i = 1; i < MAXIDS; i++) //find a spare id and set that to his name
 		{
 			str playerid = strparam(i:i);
 			if (StrLen(GetDBEntryString ("PlayerNames", playerid )) == 0 || GetDBEntryString ("PlayerNames", playerid ) == "")
@@ -730,19 +731,54 @@ script 400 ENTER
 		}
 	}
 	str yourid = strparam(i:GetDBEntryInt ("PlayerIds", yourname ));
-	str maplumppbs = strparam(n:PRINTNAME_LEVEL,s:"pbs");
-	if (GetDBEntryInt (maplumppbs,yourid) != 0)
+	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
+	str maplumppbs = strparam(s:maplump,s:"pbs");
+	if (getcvar("z_smode") == 0)
 	{
-		best_timealltime(GetDBEntryInt (maplumppbs,yourid));
+		if (GetDBEntryInt (maplumppbs,yourid) != 0)
+			best_timealltime(GetDBEntryInt (maplumppbs,yourid)); //show your all time personal best
 	}
+	else
+	{
+		//print(s:"getting rec (debug)");
+		str smodepbspace = strparam(s:maplumppbs,s:"s",i:skill);
+		if (GetDBEntryInt (smodepbspace,yourid) != 0)
+			best_timealltime(GetDBEntryInt (smodepbspace,yourid));
+	}
+}
+
+script 412 OPEN
+{
+	printbold(n:PRINTNAME_LEVEL,s:" (debug)");
+	skill = getcvar("skill");
+	startplayercount = playercount();
+	hudmessage(s:""; HUDMSG_PLAIN, 511, CR_WHITE, 0, 0, 0);
+	hudmessage(s:""; HUDMSG_PLAIN, 512, CR_WHITE, 0, 0, 0);
 }
 
 script 402 OPEN NET
 {
 	delay(10);
-	str maplump = strparam(n:PRINTNAME_LEVEL);
-	if (GetDBEntryInt (maplump, "MapRecordTime" ) != 0)
+	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
+	if (getcvar("z_smode") == 1)
 	{
+		int players;
+		if (startplayercount == 0)
+			players = 1;
+		else
+			players = startplayercount;
+		str timekey = strparam(s:"SModeRecordTimeP",i:players,s:"s",i:skill);
+		//printbold(s:timekey); //debug
+		if (GetDBEntryInt (maplump, timekey ) != 0)
+		{
+			setfont("smallfont");
+			show_author(0.05,0.43, "");
+			show_therecord(GetDBEntryInt (maplump, timekey ));
+		}
+	}
+	else if (GetDBEntryInt (maplump, "MapRecordTime" ) != 0) //show global map record
+	{
+		setfont("smallfont");
 		show_author(0.05,0.43, "");
 		show_therecord(GetDBEntryInt (maplump, "MapRecordTime" ));
 	}
@@ -757,10 +793,11 @@ script 409 OPEN CLIENTSIDE //this is for spectators to see the record
 {
 	consolecommand("puke 402");
 	delay(1);
-	if (PlayerInGame (ConsolePlayerNumber()) == FALSE)
+	if (PlayerInGame (ConsolePlayerNumber()) == FALSE) //clear hud messages for spectators
 	for (int j = 300;j<=305;j++) {
 		hudmessage(s:"";HUDMSG_PLAIN,j,CR_WHITE,0,0,0);
 		}
+	consolecommand("puke 400");
 }
 
 script 410 OPEN { //basic timer
@@ -877,7 +914,8 @@ script 401 (void) //displays final scores then exits
 
 script 404 (int timec, int player) //for checking new time against record
 {
-	str maplump = strparam(n:PRINTNAME_LEVEL);
+	int gotrec;
+	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
 	if (timec < GetDBEntryInt (maplump, "MapRecordTime" ) && timec != 0 || GetDBEntryInt (maplump, "MapRecordTime" ) == 0 && timec != 0) //if the time is quicker than record
 	{
 		str recauthor = strparam(n:player + 1);
@@ -886,8 +924,10 @@ script 404 (int timec, int player) //for checking new time against record
 		printbold(s:"record has been set"); //debug
 		show_author(0.05,0.43, "");
 		show_therecord(GetDBEntryInt (maplump, "MapRecordTime" ));
+		ambientSound( "JM2HSWIN", 127 );
+		gotrec = 1;
 	}
-	str maplumppbs = strparam(n:PRINTNAME_LEVEL,s:"pbs");
+	str maplumppbs = strparam(s:maplump,s:"pbs");
 	str yourname = strparam(n:0);
 	if (GetDBEntryInt ("PlayerIds", yourname ) == 0)
 		terminate;
@@ -896,6 +936,10 @@ script 404 (int timec, int player) //for checking new time against record
 	{
 		SetDBEntryInt (maplumppbs, yourid, timec );
 		best_timealltime(GetDBEntryInt (maplumppbs,yourid));
+		if (gotrec == 0)
+		{
+			 LocalAmbientSound("pbest", 127);
+		}
 	}
 	else if (GetDBEntryInt (maplumppbs,yourid) == 0 && timec != 0)
 	{
@@ -1163,20 +1207,31 @@ function void alltime(int p_time, str player, int height, str pos, int id) {
 //shows the record and record holder
 function void show_author(int posx, int posy, int modifier)
 {
-	str maplump = strparam(n:PRINTNAME_LEVEL);
+	setfont("smallfont");
+	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
+	int players;
+	if (startplayercount == 0)
+		players = 1;
+	else
+		players = startplayercount;
+	str moddisplay = strparam(s:"(Record for skill ",d:skill,s:" and ",d:players,s:" players)");
+	str recget = strparam(s:"SModeAuthor1p",i:players,s:"s",i:skill);
 	if (getcvar("z_smode") == 0)
 	{
+		setfont("smallfont");
 		hudmessagebold(s:"Record set by: ",s:GetDBEntryString (maplump, "MapRecordAuthor" ), s:"\n",s:modifier;
         HUDMSG_PLAIN, 512, CR_WHITE, posx, posy, 0);
 	}
 	else if (startplayercount == 0 || startplayercount == 1)
 	{
-		hudmessagebold(s:"Record set by: ",s : GetDBEntryString (maplump, "MapRecordAuthor" ), s:"\n",s:modifier;
+		setfont("smallfont");
+		hudmessagebold(s:"Record set by: ",s : GetDBEntryString (maplump, recget ), s:"\n",s:moddisplay;
         HUDMSG_PLAIN, 512, CR_WHITE, posx, posy, 0);
 	}
 	else
 	{
-		hudmessagebold(s:"Record by multiple authors", s:"\n",s:modifier,s:"\n",s:"(puke 455 for authors)";
+		setfont("smallfont");
+		hudmessagebold(s:"Record by multiple authors", s:"\n",s:moddisplay,s:"\n",s:"(puke 466 for authors)";
         HUDMSG_PLAIN, 512, CR_WHITE, posx, posy, 0);
 	}
 }
@@ -1185,39 +1240,49 @@ function void show_therecord(int p_time) {
     int mins = to_mins(p_time);
     int secs = to_secs(p_time);
     int mils = to_mils(p_time);
+	setfont("smallfont");
 
     // Any minutes?
     if (mins == 0) {
         if (mils < 10) {
+			setfont("smallfont");
             hudmessagebold(s:"Serverside record:\n",d:secs,s:".00",d:mils;
                 HUDMSG_PLAIN, 511, CR_WHITE, 0.05, 0.4, 0);
         } else if (mils < 100) {
+			setfont("smallfont");
             hudmessagebold(s:"Serverside record:\n",d:secs,s:".0",d:mils;
                 HUDMSG_PLAIN, 511, CR_WHITE, 0.05, 0.4, 0);
         } else {
+			setfont("smallfont");
             hudmessagebold(s:"Serverside record:\n",d:secs,s:".",d:mils;
                 HUDMSG_PLAIN, 511, CR_WHITE, 0.05, 0.4, 0);
         }
     } else {
         if (secs < 10) {
             if (mils < 10) {
+				setfont("smallfont");
                 hudmessagebold(s:"Serverside record:\n",d:mins,s:":0",d:secs,s:".00",d:mils;
                     HUDMSG_PLAIN, 511, CR_WHITE, 0.05, 0.4, 0);
             } else if (mils < 100) {
+				setfont("smallfont");
                 hudmessagebold(s:"Serverside record:\n",d:mins,s:":0",d:secs,s:".0",d:mils;
                     HUDMSG_PLAIN, 511, CR_WHITE, 0.05, 0.4, 0);
             } else {
+				setfont("smallfont");
                 hudmessagebold(s:"Serverside record:\n",d:mins,s:":0",d:secs,s:".",d:mils;
                     HUDMSG_PLAIN, 511, CR_WHITE, 0.05, 0.4, 0);
             }
         } else {
             if (mils < 10) {
+				setfont("smallfont");
                 hudmessagebold(s:"Serverside record:\n",d:mins,s:":",d:secs,s:".00",d:mils;
                     HUDMSG_PLAIN, 511, CR_WHITE, 0.05, 0.4, 0);
             } else if (mils < 100) {
+				setfont("smallfont");
                 hudmessagebold(s:"Serverside record:\n",d:mins,s:":",d:secs,s:".0",d:mils;
                     HUDMSG_PLAIN, 511, CR_WHITE, 0.05, 0.4, 0);
             } else {
+				setfont("smallfont");
                 hudmessagebold(s:"Serverside record:\n",d:mins,s:":",d:secs,s:".",d:mils;
                     HUDMSG_PLAIN, 511, CR_WHITE, 0.05, 0.4, 0);
             }
@@ -1255,7 +1320,8 @@ function void zr_exit2(void)
 script 456 (void)
 {
 	int entries;
-	str maplumppbs = strparam(n:PRINTNAME_LEVEL,s:"pbs");
+	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
+	str maplumppbs = strparam(s:maplump,s:"pbs");
 	for (int j = 0;j<=999;j++) {
 		hudmessage(s:""; HUDMSG_PLAIN, j, CR_WHITE, 0, 0, 0); //clear hud messages
 	for (int herp = 0; herp < MAXIDS; herp++) //for each entry in alltimes
@@ -1355,9 +1421,9 @@ script 452 UNLOADING //SINGLE MODE
 {
 	if (GetCvar("z_smode") == 1)
 	{
+		str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
 		exiter[0] = 64;
 		int p_time = timer();
-		p_top_time[playernumber()] = p_time;
 		int playeri = 0;
 		for(int eter = 0; eter < 64; eter++)
 		{
@@ -1376,22 +1442,37 @@ script 452 UNLOADING //SINGLE MODE
 		}
 		if (exiter[0] == 64) //if nobody was in game, don't store record
 			terminate;
-		log_timew(p_time,exiter[0]);
-		if (TRUE)
+		exit_time(p_time,exiter[0]);
+		if (TRUE) //don't ask
 		{
-			if (p_time < temprecord[0] && p_time != 0 || temprecord[0] == 0 && p_time != 0)
+			int players;
+			if (startplayercount == 0)
+				players = 1;
+			else
+				players = startplayercount;
+			if (players == 1)
 			{
-				log(n:exiter[0] + 1,s:" beat the record!!");
-				int skill = getcvar("skill");
-				int players = startplayercount;
-				int skeytime = strparam(s:"smode_skill",d:skill,s:"_players",d:startplayercount,s:"_time");
-				int skeyauthor = strparam(s:"smode_skill",d:skill,s:"_players",d:startplayercount,s:"_author");
-				int skeydate = strparam(s:"smode_skill",d:skill,s:"_players",d:startplayercount,s:"_date");
+				str smodepbspace = strparam(s:maplump,s:"pbss",i:skill);
+				str playername = strparam(n:exiter[0] + 1);
+				str playerid = strparam(i:GetDBEntryInt ("PlayerIds", playername));
+				if (p_time < GetDBEntryInt (smodepbspace, playerid ) && p_time != 0 || GetDBEntryInt (smodepbspace, playerid ) == 0 && p_time != 0)
+				{
+					SetDBEntryInt (smodepbspace, playerid, p_time );
+				}
+			}
+			str timekey = strparam(s:"SModeRecordTimeP",i:players,s:"s",i:skill);
+			if (p_time < GetDBEntryInt (maplump, timekey ) && p_time != 0 || GetDBEntryInt (maplump, timekey ) == 0 && p_time != 0)
+			{
+				printbold(s:"Record beaten!!");
+				str authorkey = strparam(s:"SModeAuthor1p",i:players,s:"s",i:skill);
+				str authorname1 = strparam(n:exiter[0] + 1);
+				SetDBEntryString (maplump, authorkey, authorname1 );
+				SetDBEntryInt (maplump, timekey, p_time );
 				if (playeri > 0) //save additional authors
 				{
 					for (int i = 1; i < playeri + 1; i++)
 					{
-						int addauthor = strparam(s:skeyauthor,d:i+1);
+						SetDBEntryString (maplump, strparam(s:"SModeAuthor",i:i+1,s:"p",i:players,s:"s",i:skill), strparam(n:exiter[i] + 1));
 					}
 				}
 			}
@@ -1399,11 +1480,32 @@ script 452 UNLOADING //SINGLE MODE
 	}
 }
 
+str strtoupper( str string ) { //converts to uppercase (bcc code) by Positron
+   return StrParam( {} ) := {
+      int i = 0;
+      while ( i < StrLen( string ) ) {
+         // Character encoding assumed to be ASCII.
+         if ( GetChar( string, i ) >= 97 && GetChar( string, i ) <= 122 ) {
+            c:= GetChar( string, i ) - 32;
+         }
+         else {
+            c:= GetChar( string, i );
+         }
+         ++i;
+      }
+   }
+}
+
+script 466 (void) NET
+{
+	print(s:"Not implemented yet!");
+}
 
 script 455 (void) NET
 {
 	//print(s:tempauthors[0],s:"\n",s:tempauthors[1],s:"\n",s:tempauthors[2],s:"\n",s:tempauthors[3]);
-	str maplumppbs = strparam(n:PRINTNAME_LEVEL,s:"pbs");
+	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
+	str maplumppbs = strparam(s:maplump,s:"pbs");
 	str yourname = strparam(n:0);
 	if (GetDBEntryInt ("PlayerIds", yourname ) == 0)
 		terminate;
@@ -1420,6 +1522,11 @@ script 460 (void) NET
 		int x = GetActorX(0);
 		int y = GetActorY(0);
 		int z = GetActorZ(0);
+		playerhealth[playernumber()] = GetActorProperty(0,APROP_Health);
+		playerarmor[playernumber()] = CheckInventory("armor");
+		if (CheckInventory("RocketLauncher")  > 0)
+			GotRL[playernumber()] = 1;
+		rammo[playernumber()] = CheckInventory("RocketAmmo");
 		int angle = GetActorAngle(0) >> 8;
 		Thing_Remove (1000+ playernumber());
 		spawn("MapSpot",x,y,z,1000+ playernumber(),angle);
@@ -1434,6 +1541,19 @@ script 461 (void) NET
 		{
 			print(s:"No teleport destination set, did you spawn it too close to a wall?");
 			terminate;
+		}
+		if (playerhealth[playernumber()] > 0 && playerhealth[playernumber()] < 201)
+			SetActorProperty(0,APROP_Health,playerhealth[playernumber()]);
+		if (playerarmor[playernumber()] > 0 && playerarmor[playernumber()] < 201)
+		{
+			TakeInventory("BasicArmor", 999);
+			GiveInventory("ArmorBonus", playerarmor[playernumber()]);
+		}
+		if (GotRL[playernumber()] == 1)
+		{
+			GiveInventory("RocketLauncher", 1);
+			TakeInventory("RocketAmmo", CheckInventory("RocketAmmo"));
+			GiveInventory("RocketAmmo", rammo[playernumber()]);
 		}
 		p_starttic[playernumber()] = 0;
 		acs_execute(309,0);
