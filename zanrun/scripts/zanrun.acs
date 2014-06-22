@@ -7,7 +7,7 @@
 #define FRACBITS 16
 #define FRACUNIT (1 << FRACBITS)
 #define SECONDS_IN_MINUTE 60
-#define MAXIDS 1000
+#define MAXIDS 4000
 
 // Designate the tics where player hits the start/cp
 int p_starttic[PLAYERMAX];
@@ -26,7 +26,19 @@ int rammo[PLAYERMAX];
 int playerhealth[PLAYERMAX];
 int playerarmor[PLAYERMAX];
 
+#define ARMORTYPES	4
+
+str armor_types[ARMORTYPES] = {
+  "ArmorBonus",
+  "GreenArmor",
+  "BlueArmor",
+  "BlueArmorForMegasphere"
+};
+
+str playerarmortype[PLAYERMAX];
+
 //============Personal Timer, Checkpoints and Personal Bests================
+
 
 // The default script to start the map with.
 script 100 ENTER {
@@ -455,7 +467,7 @@ function void best_time(int p_time) {
     }
 }
 
-function void best_timealltime(int p_time) {
+function void best_timealltime(int p_time, int rank, int points) {
     int mins = to_mins(p_time);
     int secs = to_secs(p_time);
     int mils = to_mils(p_time);
@@ -463,36 +475,36 @@ function void best_timealltime(int p_time) {
     // Any minutes?
     if (mins == 0) {
         if (mils < 10) {
-            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".00",d:mils;
+            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".00",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                 HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
         } else if (mils < 100) {
-            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".0",d:mils;
+            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".0",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                 HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
         } else {
-            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".",d:mils;
+            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                 HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
         }
     } else {
         if (secs < 10) {
             if (mils < 10) {
-                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".00",d:mils;
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".00",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             } else if (mils < 100) {
-                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".0",d:mils;
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".0",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             } else {
-                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".",d:mils;
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             }
         } else {
             if (mils < 10) {
-                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".00",d:mils;
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".00",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             } else if (mils < 100) {
-                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".0",d:mils;
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".0",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             } else {
-                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".",d:mils;
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             }
         }
@@ -705,7 +717,7 @@ function int to_mils(int tics) {
 #define F_NAME 1
 
 int finaltimes[PLAYERMAX][2]; //times for end map leaderboard
-int alltimes[MAXIDS][2]; //all time top times
+int alltimes[MAXIDS][2]; //all time top times (unused currently)
 int temprecord[PLAYERMAX]; //temporary variable for storing record
 bool roundover;
 bool z_tbypass; //used to check whether to bypass built in timelimit
@@ -733,23 +745,26 @@ script 400 ENTER NET
 	str yourid = strparam(i:GetDBEntryInt ("PlayerIds", yourname ));
 	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
 	str maplumppbs = strparam(s:maplump,s:"pbs");
+	str maplumppoints = strparam(s:maplump,s:"points");
 	if (getcvar("z_smode") == 0)
 	{
 		if (GetDBEntryInt (maplumppbs,yourid) != 0)
-			best_timealltime(GetDBEntryInt (maplumppbs,yourid)); //show your all time personal best
+			best_timealltime(GetDBEntryInt (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid)); //show your all time personal best
+		if (GetDBEntryInt ("totalpoints",yourid) != 0)
+			hudmessage(s:"Total points on server: ",i:GetDBEntryInt ("totalpoints",yourid),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",yourid, FALSE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
 	}
 	else
 	{
 		//print(s:"getting rec (debug)");
 		str smodepbspace = strparam(s:maplumppbs,s:"s",i:skill);
 		if (GetDBEntryInt (smodepbspace,yourid) != 0)
-			best_timealltime(GetDBEntryInt (smodepbspace,yourid));
+			best_timealltime(GetDBEntryInt (smodepbspace,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid));
 	}
 }
 
 script 412 OPEN
 {
-	printbold(n:PRINTNAME_LEVEL,s:" (debug)");
+	//printbold(n:PRINTNAME_LEVEL,s:" (debug)");
 	skill = getcvar("skill");
 	startplayercount = playercount();
 	hudmessage(s:""; HUDMSG_PLAIN, 511, CR_WHITE, 0, 0, 0);
@@ -781,6 +796,19 @@ script 402 OPEN NET
 		setfont("smallfont");
 		show_author(0.05,0.43, "");
 		show_therecord(GetDBEntryInt (maplump, "MapRecordTime" ));
+	}
+	if (GetDBEntryInt ("MapIds", maplump ) == 0) //set map id
+	{
+		for (int i = 1; i < MAXIDS; i++) //find a spare id and set that to map lump name
+		{
+			str mapid = strparam(i:i);
+			if (StrLen(GetDBEntryString ("MapNames", mapid )) == 0 || GetDBEntryString ("MapNames", mapid ) == "")
+			{
+				SetDBEntryString ("MapNames", mapid, maplump);
+				SetDBEntryString ("MapIds", maplump, mapid);
+				break;
+			}
+		}
 	}
 }
 
@@ -826,7 +854,7 @@ function void TimerShowTime( int time ) {
 		
 script 401 (void) //displays final scores then exits
 {	
-	delay(1);
+	delay(1); //note, for whatever reason sync issues required me to put a couple of delays in here
 	roundover = true; //declare the round over for enter and respawn to freeze you
 	delay(5);
 	for (int j = 0;j<=999;j++) {
@@ -843,25 +871,8 @@ script 401 (void) //displays final scores then exits
 		if (finaltimes[derp][F_TIME] == 0) //if an entry has a top time of zero...
 			finaltimes[derp][F_TIME] = 99999999; //set it to a huge number (so it doesn't affect sorting)
 	}
-	int temp = 0;
-	int temp2 = 0;
-    for (int write = 0; write < PLAYERMAX; write++) //bubble sort
-    {
-		for (int sort = 0; sort < PLAYERMAX - 1; sort++)
-        {
-			if (finaltimes[sort][F_TIME] > finaltimes[sort + 1][F_TIME])
-            {
-				temp = finaltimes[sort + 1][F_TIME];
-                finaltimes[sort + 1][F_TIME] = finaltimes[sort][F_TIME];
-                finaltimes[sort][F_TIME] = temp;
-                temp2 = finaltimes[sort + 1][F_NAME];
-                finaltimes[sort + 1][F_NAME] = finaltimes[sort][F_NAME];
-                finaltimes[sort][F_NAME] = temp2;
-             }
-        }
-    }
-
-
+	delay(1);
+	hsort(); //shell sort
 	if (finaltimes[0][F_TIME] == 99999999) //if the highest ranking entry is 99999999 (indicating no time set)
 	{
 		printbold(s:"Wow, nodoby managed to beat the course! You guys suck."); //insult the players for being shit (as nobody managed to get a time)
@@ -928,6 +939,8 @@ script 404 (int timec, int player) //for checking new time against record
 		gotrec = 1;
 	}
 	str maplumppbs = strparam(s:maplump,s:"pbs");
+	str maplumprank = strparam(s:maplump,s:"rank");
+	str maplumppoints = strparam(s:maplump,s:"points");
 	str yourname = strparam(n:0);
 	if (GetDBEntryInt ("PlayerIds", yourname ) == 0)
 		terminate;
@@ -935,16 +948,22 @@ script 404 (int timec, int player) //for checking new time against record
 	if (timec < GetDBEntryInt (maplumppbs,yourid) && timec != 0)  
 	{
 		SetDBEntryInt (maplumppbs, yourid, timec );
-		best_timealltime(GetDBEntryInt (maplumppbs,yourid));
+		SetDBEntryInt (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, TRUE));
+		SetDBEntryInt (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, TRUE)));
+		best_timealltime(GetDBEntryInt (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid));
 		if (gotrec == 0)
 		{
 			 LocalAmbientSound("pbest", 127);
 		}
+		acs_execute(464,0,yourid);
 	}
 	else if (GetDBEntryInt (maplumppbs,yourid) == 0 && timec != 0)
 	{
 		SetDBEntryInt (maplumppbs, yourid, timec );
-		best_timealltime(GetDBEntryInt (maplumppbs,yourid));
+		SetDBEntryInt (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, TRUE));
+		SetDBEntryInt (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, TRUE)));
+		best_timealltime(GetDBEntryInt (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid));
+		acs_execute(464,0,yourid);
 	}	
 }
 
@@ -1111,6 +1130,63 @@ script 654 (int onOff, int xflags1, int xflags2)
         if (onOff) { GiveActorInventory(PlayerTIDs[i], "DisableShootableFlag", 1); }
         else { GiveActorInventory(PlayerTIDs[i], "EnableShootableFlag", 1); }
     }
+}
+
+//Positron's shell sort
+void hsort() {
+   // Figure out initial increment.
+   int h = 0;
+   int h_next = 1;
+   do {
+      h = h_next;
+      h_next = 3 * h + 1;
+   } while ( h_next < PLAYERMAX );
+   // Sort.
+   while ( h ) {
+      int sorted = h;
+      while ( sorted < PLAYERMAX ) {
+         int i = sorted;
+         int time = finaltimes[ i ][ F_TIME ];
+         str name = finaltimes[ i ][ F_NAME ];
+         while ( i >= h && time < finaltimes[ i - h ][ F_TIME ] ) {
+            finaltimes[ i ][ F_TIME ] = finaltimes[ i - h ][ F_TIME ];
+            finaltimes[ i ][ F_NAME ] = finaltimes[ i - h ][ F_NAME ];
+            i -= h;
+         }
+         finaltimes[ i ][ F_TIME ] = time;
+         finaltimes[ i ][ F_NAME ] = name;
+         ++sorted;
+      }
+      h = ( h - 1 ) / 3;
+   }
+}
+
+void hsortDB(int size) {
+   // Figure out initial increment.
+   int h = 0;
+   int h_next = 1;
+   do {
+      h = h_next;
+      h_next = 3 * h + 1;
+   } while ( h_next < size );
+   // Sort.
+   while ( h ) {
+      int sorted = h;
+      while ( sorted < size ) {
+         int i = sorted;
+         int time = alltimes[ i ][ F_TIME ];
+         str name = alltimes[ i ][ F_NAME ];
+         while ( i >= h && time < alltimes[ i - h ][ F_TIME ] ) {
+            alltimes[ i ][ F_TIME ] = alltimes[ i - h ][ F_TIME ];
+            alltimes[ i ][ F_NAME ] = alltimes[ i - h ][ F_NAME ];
+            i -= h;
+         }
+         alltimes[ i ][ F_TIME ] = time;
+         alltimes[ i ][ F_NAME ] = name;
+         ++sorted;
+      }
+      h = ( h - 1 ) / 3;
+   }
 }
 
 //function to display leaderboard times
@@ -1324,6 +1400,7 @@ script 456 (void)
 	str maplumppbs = strparam(s:maplump,s:"pbs");
 	for (int j = 0;j<=999;j++) {
 		hudmessage(s:""; HUDMSG_PLAIN, j, CR_WHITE, 0, 0, 0); //clear hud messages
+	/* out with the old in with the new
 	for (int herp = 0; herp < MAXIDS; herp++) //for each entry in alltimes
 	{
 		str herpid = strparam(i:herp + 1);
@@ -1335,81 +1412,73 @@ script 456 (void)
 		alltimes[herp][F_TIME] = GetDBEntryInt (maplumppbs,herpid); //set the value at index "herp" to the top time of player "herp"
 		alltimes[herp][F_NAME] = GetDBEntryString ("PlayerNames", herpid );
 	}
-	log(s:"first loop done");
+	//log(s:"first loop done");
 	for (int derp = 0; derp < MAXIDS; derp++)
 	{
 		if (alltimes[derp][F_TIME] == 0) //if an entry has a top time of zero...
 			alltimes[derp][F_TIME] = 99999999; //set it to a huge number (so it doesn't affect sorting)
 	}
-	log(s:"second loop done");
-	int temp = 0;
-	int temp2 = 0;
-    for (int write = 0; write < entries; write++) //bubble sort
-    {
-		for (int sort = 0; sort < entries - 1; sort++)
-        {
-			if (alltimes[sort][F_TIME] > alltimes[sort + 1][F_TIME])
-            {
-				temp = alltimes[sort + 1][F_TIME];
-                alltimes[sort + 1][F_TIME] = alltimes[sort][F_TIME];
-                alltimes[sort][F_TIME] = temp;
-                temp2 = alltimes[sort + 1][F_NAME];
-                alltimes[sort + 1][F_NAME] = alltimes[sort][F_NAME];
-                alltimes[sort][F_NAME] = temp2;
-            }
-        }
-    }
-	log(s:"3rd loop done");
+	//log(s:"second loop done");
+	hsortDB(entries); //shll sort
+	//log(s:"3rd loop done");
+	*/
+	int Top5 = QuerySortedDBEntries (maplumppbs, 5, 0, 1 );
 	setfont("BIGFONT");
 	hudmessagebold(s:"All Time Top Five"; HUDMSG_PLAIN, 500, CR_WHITE, 0.5, 0.1, 0);
-
-	if (alltimes[0][F_TIME] == 99999999) //if the highest ranking entry is 99999999 (indicating no time set)
+	int numEntries = GetDBResultSize(Top5);
+	if (numEntries == 0) //if there is no top 5
 	{
-		printbold(s:"So some weird glitch has happened."); 
+		printbold(s:"No personal bests for this map are in the database"); 
 		delay(TICRATE*5);
+		ClearDBResultHandle ( Top5 );
 		zr_exit2();
 	}
 	else
 	{
-		alltime(alltimes[0][F_TIME], alltimes[0][F_NAME], 0.2, "\ca1st", 501); //otherwise show the highest ranking entry as first place
+		alltime(GetDBEntryInt (maplumppbs,GetDBResultEntryNameString(Top5, 0)), GetDBEntryString ("PlayerNames", GetDBResultEntryNameString(Top5, 0)), 0.2, "\ca1st", 501); //show the highest ranking entry as first place
 	}
-	if (alltimes[1][0] == 99999999) //if the second highest ranking entry is 99999999 (indicating no time set)
+	if (numEntries == 1) 
 	{
 		delay(TICRATE*10); //wait, and then exit, don't display second place as he didn't get a time
+		ClearDBResultHandle ( Top5 );
 		zr_exit2(); 
 	}
 	else
 	{
-		alltime(alltimes[1][F_TIME], alltimes[1][F_NAME], 0.3, "\cb2nd", 502); //otherwise show second place
+		alltime(GetDBEntryInt (maplumppbs,GetDBResultEntryNameString(Top5, 1)), GetDBEntryString ("PlayerNames", GetDBResultEntryNameString(Top5, 1)), 0.3, "\cb2nd", 502); //otherwise show second place
 	}
-	if (alltimes[2][0] == 99999999) //if the third highest ranking entry is 99999999 (indicating no time set) and so on...
+	if (numEntries == 2) 
 	{
 		delay(TICRATE*10);
+		ClearDBResultHandle ( Top5 );
 		zr_exit2();
 	}
 	else
 	{
-		alltime(alltimes[2][F_TIME], alltimes[2][F_NAME], 0.4, "\cc3rd", 503);
+		alltime(GetDBEntryInt (maplumppbs,GetDBResultEntryNameString(Top5, 2)), GetDBEntryString ("PlayerNames", GetDBResultEntryNameString(Top5, 2)), 0.4, "\cc3rd", 503);
 	}
-	if (alltimes[3][0] == 99999999)
+	if (numEntries  == 3)
 	{
 		delay(TICRATE*10);
+		ClearDBResultHandle ( Top5 );
 		zr_exit2();
 	}
 	else
 	{
-		alltime(alltimes[3][F_TIME], alltimes[3][F_NAME], 0.5, "\cd4th", 504);
+		alltime(GetDBEntryInt (maplumppbs,GetDBResultEntryNameString(Top5, 3)), GetDBEntryString ("PlayerNames", GetDBResultEntryNameString(Top5, 3)), 0.5, "\cd4th", 504);
 	}
-	if (alltimes[4][0] == 99999999)
+	if (numEntries  == 4)
 	{
 		delay(TICRATE*10);
+		ClearDBResultHandle ( Top5 );
 		zr_exit2();
 	}
 	else
 	{
-		alltime(alltimes[4][F_TIME], alltimes[4][F_NAME], 0.6, "\ce5th", 505);
+		alltime(GetDBEntryInt (maplumppbs,GetDBResultEntryNameString(Top5, 4)), GetDBEntryString ("PlayerNames", GetDBResultEntryNameString(Top5, 4)), 0.6, "\ce5th", 505);
 	}
 	delay(TICRATE*10);
+	ClearDBResultHandle ( Top5 );
 	zr_exit2();
 }
 	
@@ -1524,6 +1593,15 @@ script 460 (void) NET
 		int z = GetActorZ(0);
 		playerhealth[playernumber()] = GetActorProperty(0,APROP_Health);
 		playerarmor[playernumber()] = CheckInventory("armor");
+		for (int i = 0; i < ARMORTYPES; i++)
+		{
+			if (GetArmorType(armor_types[i], PlayerNumber()))
+			{
+				playerarmortype[playernumber()] = armor_types[i];
+				break;
+			}
+		}
+		//print(s:playerarmortype[playernumber()],s:" (debug)");//debug
 		if (CheckInventory("RocketLauncher")  > 0)
 			GotRL[playernumber()] = 1;
 		rammo[playernumber()] = CheckInventory("RocketAmmo");
@@ -1547,7 +1625,18 @@ script 461 (void) NET
 		if (playerarmor[playernumber()] > 0 && playerarmor[playernumber()] < 201)
 		{
 			TakeInventory("BasicArmor", 999);
-			GiveInventory("ArmorBonus", playerarmor[playernumber()]);
+			if (playerarmortype[playernumber()] == "GreenArmor")
+			{
+				GiveInventory("GreenArmor", 1);
+				TakeInventory("BasicArmor", 100 - playerarmor[playernumber()]);
+			}
+			else if (playerarmortype[playernumber()] == "BlueArmor" || playerarmortype[playernumber()] == "BlueArmorForMegasphere")
+			{
+				GiveInventory("BlueArmor", 1);
+				TakeInventory("BasicArmor", 200 - playerarmor[playernumber()]);
+			}
+			else
+				GiveInventory("ArmorBonus", playerarmor[playernumber()]);
 		}
 		if (GotRL[playernumber()] == 1)
 		{
@@ -1561,4 +1650,83 @@ script 461 (void) NET
 		Thing_Stop (0);
 		SetActorAngle(0,GetActorAngle(1000+ playernumber()));
 	}
+}
+
+//Database fixing scripts, puke these as admin
+
+script 462 (void)
+{
+	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
+	str maplumppbs = strparam(s:maplump,s:"pbs");
+	str maplumprank = strparam(s:maplump,s:"rank");
+	str maplumppoints = strparam(s:maplump,s:"points");
+	//print(s:"(debug) hypno points: ",i:getpoints(GetDBEntryRank (maplumppbs,1, TRUE)));
+	for (int i = 1; i < MAXIDS; i++) 
+	{
+		str playerid = strparam(i:i);
+		if (StrLen(GetDBEntryString ("PlayerNames", playerid )) == 0 || GetDBEntryString ("PlayerNames", playerid ) == "")
+		{
+			print(s:"breaking with player id: ",s:playerid);
+			break;
+		}
+		if (GetDBEntryInt (maplumppbs, playerid ) != 0)
+		{
+			SetDBEntryInt (maplumprank, playerid, GetDBEntryRank (maplumppbs,playerid, TRUE));
+			SetDBEntryInt (maplumppoints, playerid, getpoints(GetDBEntryRank (maplumppbs,playerid, TRUE)));
+		}
+	}
+}
+
+function int getpoints (int rank)
+{
+	int ret;
+	if (rank == 1)
+	{
+		ret = 100;
+	}
+	else
+	{
+		ret = 99 - rank;
+	}
+	return ret;
+}
+
+script 463 (void) //this is a hefty script, puke with caution
+{
+	for (int i = 1; i < MAXIDS; i++)
+	{
+		int points = 0;
+		str playerid = strparam(i:i);
+		if (StrLen(GetDBEntryString ("PlayerNames", playerid )) == 0 || GetDBEntryString ("PlayerNames", playerid ) == "")
+			break;
+		for (int l = 1; l < MAXIDS; l++) 
+		{
+			str mapid = strparam(i:l);
+			if (StrLen(GetDBEntryString ("MapNames", mapid )) == 0 || GetDBEntryString ("MapNames", mapid ) == "")
+				break;
+			str maplumppoints = strparam(s:GetDBEntryString ("MapNames", mapid ),s:"points");
+			points += GetDBEntryInt(maplumppoints,playerid);	
+		}
+		SetDBEntryInt ("totalpoints", playerid, points);
+	}
+}
+
+//point accumulator
+
+script 464 (int id)
+{
+	int points = 0;
+	str playerid = strparam(i:id);
+	if (StrLen(GetDBEntryString ("PlayerNames", playerid )) == 0 || GetDBEntryString ("PlayerNames", playerid ) == "")
+		terminate;
+	for (int l = 1; l < MAXIDS; l++) 
+	{
+		str mapid = strparam(i:l);
+		if (StrLen(GetDBEntryString ("MapNames", mapid )) == 0 || GetDBEntryString ("MapNames", mapid ) == "")
+			break;
+		str maplumppoints = strparam(s:GetDBEntryString ("MapNames", mapid ),s:"points");
+		points += GetDBEntryInt(maplumppoints,playerid);	
+	}
+	SetDBEntryInt ("totalpoints", playerid, points);
+	hudmessage(s:"Total points on server: ",i:GetDBEntryInt ("totalpoints",id),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",id, FALSE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
 }
