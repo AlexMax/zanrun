@@ -955,7 +955,7 @@ script 404 (int timec, int player) //for checking new time against record
 		{
 			 LocalAmbientSound("pbest", 127);
 		}
-		acs_execute(464,0,yourid);
+		acs_execute(464,0,GetDBEntryInt ("PlayerIds", yourname ));
 	}
 	else if (GetDBEntryInt (maplumppbs,yourid) == 0 && timec != 0)
 	{
@@ -963,7 +963,7 @@ script 404 (int timec, int player) //for checking new time against record
 		SetDBEntryInt (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, TRUE));
 		SetDBEntryInt (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, TRUE)));
 		best_timealltime(GetDBEntryInt (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid));
-		acs_execute(464,0,yourid);
+		acs_execute(464,0,GetDBEntryInt ("PlayerIds", yourname ));
 	}	
 }
 
