@@ -1728,5 +1728,5 @@ script 464 (int id)
 		points += GetDBEntryInt(maplumppoints,playerid);	
 	}
 	SetDBEntryInt ("totalpoints", playerid, points);
-	hudmessage(s:"Total points on server: ",i:GetDBEntryInt ("totalpoints",id),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",id, FALSE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+	hudmessage(s:"Total points on server: ",i:GetDBEntryInt ("totalpoints",playerid),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",playerid, FALSE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
 }
