@@ -38,6 +38,7 @@ str armor_types[ARMORTYPES] = {
 str playerarmortype[PLAYERMAX];
 
 int teleportclearinv;
+int gone[64];
 
 //============Personal Timer, Checkpoints and Personal Bests================
 
@@ -174,6 +175,8 @@ script 301 ENTER {
 // Timer, top time and speed on the HUD -- clientsided using a clientside start tic (p_cstarttic)
 script 302 ENTER CLIENTSIDE {
 	//print(s:"302 ENTER CLIENTSIDE"); //debug
+	if(GetCvar("csmode") == 0)
+		p_cstarttic[playernumber()] = 0; //reset the clientside start tic on re-entering
     while(TRUE) {
 		//print(d:p_cstarttic[playernumber()]); //debug
         if (p_cstarttic[playernumber()] != 0) {
@@ -241,9 +244,9 @@ script 307 (int nowtimer) CLIENTSIDE //display timer clientside
 		now_time(nowtimer);
 }
 
-script 308 ENTER CLIENTSIDE {
-	if(GetCvar("csmode") == 0)
-		p_cstarttic[playernumber()] = 0; //reset the clientside start tic on re-entering
+script 308 ENTER CLIENTSIDE { //stub
+	//if(GetCvar("csmode") == 0)
+		//p_cstarttic[playernumber()] = 0; //reset the clientside start tic on re-entering
 }
 
 script 310 (int smodeon) CLIENTSIDE //clientside csmode switcher
@@ -477,35 +480,44 @@ function void best_timealltime(int p_time, int rank, int points) {
     // Any minutes?
     if (mins == 0) {
         if (mils < 10) {
+			setfont("smallfont");
             hudmessage(s:"Personal Best (all time):\n",d:secs,s:".00",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                 HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
         } else if (mils < 100) {
+			setfont("smallfont");
             hudmessage(s:"Personal Best (all time):\n",d:secs,s:".0",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                 HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
         } else {
+			setfont("smallfont");
             hudmessage(s:"Personal Best (all time):\n",d:secs,s:".",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                 HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
         }
     } else {
         if (secs < 10) {
             if (mils < 10) {
+				setfont("smallfont");
                 hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".00",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             } else if (mils < 100) {
+				setfont("smallfont");
                 hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".0",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             } else {
+				setfont("smallfont");
                 hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             }
         } else {
             if (mils < 10) {
+				setfont("smallfont");
                 hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".00",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             } else if (mils < 100) {
+				setfont("smallfont");
                 hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".0",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             } else {
+				setfont("smallfont");
                 hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             }
@@ -728,6 +740,7 @@ int skill;
 
 script 400 ENTER NET
 {
+	gone[playernumber()] = 0;
 	str yourname = strparam(n:0);
 	//print(s:"400 executing (debug)");
 	if (GetDBEntryInt ("PlayerIds", yourname ) == 0) //if there is no ID associated with your name
@@ -747,13 +760,11 @@ script 400 ENTER NET
 	str yourid = strparam(i:GetDBEntryInt ("PlayerIds", yourname ));
 	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
 	str maplumppbs = strparam(s:maplump,s:"pbs");
+	str maplumprank = strparam(s:maplump,s:"rank");
 	str maplumppoints = strparam(s:maplump,s:"points");
 	if (getcvar("z_smode") == 0)
 	{
-		if (GetDBEntryInt (maplumppbs,yourid) != 0)
-			best_timealltime(GetDBEntryInt (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid)); //show your all time personal best
-		if (GetDBEntryInt ("totalpoints",yourid) != 0)
-			hudmessage(s:"Total points on server: ",i:GetDBEntryInt ("totalpoints",yourid),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",yourid, FALSE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+		acs_executealways(411,0);
 	}
 	else
 	{
@@ -761,6 +772,40 @@ script 400 ENTER NET
 		str smodepbspace = strparam(s:maplumppbs,s:"s",i:skill);
 		if (GetDBEntryInt (smodepbspace,yourid) != 0)
 			best_timealltime(GetDBEntryInt (smodepbspace,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid));
+	}
+}
+
+script 411 (void)
+{
+	int iterations = 0;
+	while(gone[playernumber()] == 0 && roundover == false)
+	{
+		str yourname = strparam(n:0); //have to do this because strparam only lasts 1 tic
+		str yourid = strparam(i:GetDBEntryInt ("PlayerIds", yourname )); 
+		str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
+		str maplumppbs = strparam(s:maplump,s:"pbs");
+		str maplumprank = strparam(s:maplump,s:"rank");
+		str maplumppoints = strparam(s:maplump,s:"points");
+		
+		if (GetDBEntryInt (maplumppbs,yourid) != 0)
+			best_timealltime(GetDBEntryInt (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid)); //show your all time personal best
+		//if (GetDBEntryInt ("totalpoints",yourid) != 0)
+			//hudmessage(s:"Total points on server: ",i:GetDBEntryInt ("totalpoints",yourid),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",yourid, FALSE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+		if (GetDBEntryInt (maplumppbs,yourid) != 0)
+		{
+			SetDBEntryInt (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, TRUE));
+			SetDBEntryInt (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, TRUE)));
+		}
+		
+		if (iterations == 0) //don't execute this too frequently
+		{
+			iterations++;
+			acs_execute(464,0,GetDBEntryInt ("PlayerIds", yourname ));
+		}
+		else
+			iterations = 0;
+		
+		delay(35*4 + playernumber()*5);
 	}
 }
 
@@ -821,12 +866,16 @@ script 403 ENTER CLIENTSIDE
 
 script 409 OPEN CLIENTSIDE //this is for spectators to see the record
 {
+	delay(1);
+	if (PlayerInGame (ConsolePlayerNumber()) == FALSE)
+	{//clear hud messages for spectators
+		for (int j = 300;j<=305;j++) {
+			hudmessage(s:"";HUDMSG_PLAIN,j,CR_WHITE,0,0,0);
+		}
+	}
+	//print(s:"409 executing");
 	consolecommand("puke 402");
 	delay(1);
-	if (PlayerInGame (ConsolePlayerNumber()) == FALSE) //clear hud messages for spectators
-	for (int j = 300;j<=305;j++) {
-		hudmessage(s:"";HUDMSG_PLAIN,j,CR_WHITE,0,0,0);
-		}
 	consolecommand("puke 400");
 }
 
@@ -977,7 +1026,7 @@ script 405 ENTER //freeze players if the round is over
 	}
 	else
 	{
-	SetPlayerProperty(0, 1, PROP_TOTALLYFROZEN);
+		SetPlayerProperty(0, 1, PROP_TOTALLYFROZEN);
 	}
 }
 
@@ -1727,6 +1776,7 @@ script 464 (int id)
 		points += GetDBEntryInt(maplumppoints,playerid);	
 	}
 	SetDBEntryInt ("totalpoints", playerid, points);
+	setfont("smallfont");
 	hudmessage(s:"Total points on server: ",i:GetDBEntryInt ("totalpoints",playerid),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",playerid, FALSE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
 }
 
@@ -1734,4 +1784,14 @@ script 464 (int id)
 script 465 (void)
 {
 	teleportclearinv = 1;
+}
+
+script 468 DEATH
+{
+	gone[playernumber()] = 1;
+}
+
+script 467 (int player) DISCONNECT
+{
+	gone[player] = 1;
 }
