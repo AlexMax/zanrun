@@ -1,0 +1,7 @@
+addkeysection "ZanRun" MySampleKeysection
+addmenukey "Set Personal Teleport" z_tpspawn
+addmenukey "Teleport to Personal Teleport" z_tele
+alias z_tpspawn "puke 460"
+alias z_tele "puke 461"
+defaultbind Q z_tpspawn
+defaultbind E z_tele

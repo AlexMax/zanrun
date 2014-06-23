@@ -1,4 +1,4 @@
-VERSION = "b27b"
+VERSION = "b27c"
 
 ACC = acc\bcc.exe
 ACCFLAGS = -i acc

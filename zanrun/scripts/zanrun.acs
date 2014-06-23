@@ -37,6 +37,8 @@ str armor_types[ARMORTYPES] = {
 
 str playerarmortype[PLAYERMAX];
 
+int teleportclearinv;
+
 //============Personal Timer, Checkpoints and Personal Bests================
 
 
@@ -952,9 +954,7 @@ script 404 (int timec, int player) //for checking new time against record
 		SetDBEntryInt (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, TRUE)));
 		best_timealltime(GetDBEntryInt (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid));
 		if (gotrec == 0)
-		{
 			 LocalAmbientSound("pbest", 127);
-		}
 		acs_execute(464,0,GetDBEntryInt ("PlayerIds", yourname ));
 	}
 	else if (GetDBEntryInt (maplumppbs,yourid) == 0 && timec != 0)
@@ -964,6 +964,7 @@ script 404 (int timec, int player) //for checking new time against record
 		SetDBEntryInt (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, TRUE)));
 		best_timealltime(GetDBEntryInt (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid));
 		acs_execute(464,0,GetDBEntryInt ("PlayerIds", yourname ));
+		LocalAmbientSound("pbest", 127);
 	}	
 }
 
@@ -997,34 +998,27 @@ script 407 OPEN //Waits a certain amount of time, shows leaderboard, and then ex
 	if (z_tbypass == true) //Check if the map disabled in built time limit
 		terminate;
 	if (getcvar("z_tlimit") == 0) {consolecommand("set z_tlimit 0"); delay(TICRATE); restart; } //Check if a timelimit has been set using z_tlimit
-	print(d:getcvar("z_tlimit"), s:" minutes remaining!");
-	if (getcvar("z_tlimit") < 2)
+	int Time = GetCVar("z_tlimit")*60;
+	Until(Time == 0)
 	{
-		delay(TICRATE*50);
-		print(s:"\cg10 SECONDS REMAINING!");
-		delay(TICRATE*10);
-		acs_execute(401,0);
+		if (Time <= 60){
+			SetFont("BIGFONT");
+			HudMessageBold(s:"Round Ends In: \cg", d:Time/60, s:":", d:(Time%60)/10, d:Time%10; HUDMSG_PLAIN, 2, CR_WHITE, 0.81, 0.85, 3.5);
+			delay(35);
+			Time--;
+		}else if (Time > 60 && Time <= 180){
+			SetFont("BIGFONT");
+			HudMessageBold(s:"Round Ends In: \ck", d:Time/60, s:":", d:(Time%60)/10, d:Time%10; HUDMSG_PLAIN, 2, CR_WHITE, 0.81, 0.85, 3.5);
+			delay(35);
+			Time--;
+		}else if (Time > 180){
+			SetFont("BIGFONT");
+			HudMessageBold(s:"Round Ends In: \cd", d:Time/60, s:":", d:(Time%60)/10, d:Time%10; HUDMSG_PLAIN, 2, CR_WHITE, 0.81, 0.85, 3.5);
+			delay(35);
+			Time--;
+		}
 	}
-	else if (getcvar("z_tlimit") < 6)
-	{
-		delay(TICRATE*60*(getcvar("z_tlimit") - 1));
-		print(s:"1 minute remaining!!");
-		delay(TICRATE*50);
-		print(s:"\cg10 SECONDS REMAINING!");
-		delay(TICRATE*10);
-		acs_execute(401,0);
-	}
-	else
-	{
-		delay(TICRATE*60*(getcvar("z_tlimit") - 5));
-		print(s:"5 minutes remaining!!");
-		delay(TICRATE*60*4);
-		print(s:"1 minute remaining!!");
-		delay(TICRATE*50);
-		print(s:"\cg10 SECONDS REMAINING!");
-		delay(TICRATE*10);
-		acs_execute(401,0);
-	}
+	acs_execute(401,0);
 }
 
 script 408 (void) //Script for maps to activate should they want to bypass any built in time limit.
@@ -1620,29 +1614,34 @@ script 461 (void) NET
 			print(s:"No teleport destination set, did you spawn it too close to a wall?");
 			terminate;
 		}
-		if (playerhealth[playernumber()] > 0 && playerhealth[playernumber()] < 201)
-			SetActorProperty(0,APROP_Health,playerhealth[playernumber()]);
-		if (playerarmor[playernumber()] > 0 && playerarmor[playernumber()] < 201)
+		if (teleportclearinv == 1)
+			acs_executealways(100,0);
+		else
 		{
-			TakeInventory("BasicArmor", 999);
-			if (playerarmortype[playernumber()] == "GreenArmor")
+			if (playerhealth[playernumber()] > 0 && playerhealth[playernumber()] < 201)
+				SetActorProperty(0,APROP_Health,playerhealth[playernumber()]);
+			if (playerarmor[playernumber()] > 0 && playerarmor[playernumber()] < 201)
 			{
-				GiveInventory("GreenArmor", 1);
-				TakeInventory("BasicArmor", 100 - playerarmor[playernumber()]);
+				TakeInventory("BasicArmor", 999);
+				if (playerarmortype[playernumber()] == "GreenArmor")
+				{
+					GiveInventory("GreenArmor", 1);
+					TakeInventory("BasicArmor", 100 - playerarmor[playernumber()]);
+				}
+				else if (playerarmortype[playernumber()] == "BlueArmor" || playerarmortype[playernumber()] == "BlueArmorForMegasphere")
+				{
+					GiveInventory("BlueArmor", 1);
+					TakeInventory("BasicArmor", 200 - playerarmor[playernumber()]);
+				}
+				else
+					GiveInventory("ArmorBonus", playerarmor[playernumber()]);
 			}
-			else if (playerarmortype[playernumber()] == "BlueArmor" || playerarmortype[playernumber()] == "BlueArmorForMegasphere")
+			if (GotRL[playernumber()] == 1)
 			{
-				GiveInventory("BlueArmor", 1);
-				TakeInventory("BasicArmor", 200 - playerarmor[playernumber()]);
+				GiveInventory("RocketLauncher", 1);
+				TakeInventory("RocketAmmo", CheckInventory("RocketAmmo"));
+				GiveInventory("RocketAmmo", rammo[playernumber()]);
 			}
-			else
-				GiveInventory("ArmorBonus", playerarmor[playernumber()]);
-		}
-		if (GotRL[playernumber()] == 1)
-		{
-			GiveInventory("RocketLauncher", 1);
-			TakeInventory("RocketAmmo", CheckInventory("RocketAmmo"));
-			GiveInventory("RocketAmmo", rammo[playernumber()]);
 		}
 		p_starttic[playernumber()] = 0;
 		acs_execute(309,0);
@@ -1729,4 +1728,10 @@ script 464 (int id)
 	}
 	SetDBEntryInt ("totalpoints", playerid, points);
 	hudmessage(s:"Total points on server: ",i:GetDBEntryInt ("totalpoints",playerid),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",playerid, FALSE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+}
+
+//maps execute this to clear inventory on teleport
+script 465 (void)
+{
+	teleportclearinv = 1;
 }
