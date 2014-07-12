@@ -39,6 +39,7 @@ str playerarmortype[PLAYERMAX];
 
 int teleportclearinv;
 int gone[64];
+int updating;
 
 //============Personal Timer, Checkpoints and Personal Bests================
 
@@ -741,9 +742,16 @@ int skill;
 script 400 ENTER NET
 {
 	gone[playernumber()] = 0;
-	str yourname = strparam(n:0);
+	while(PlayerIsLoggedIn(playernumber()) == 0)
+    {
+        SetFont("smallfont");
+        SetHudSize(1024, 768, FALSE);
+        HudMessage(s:"Please log in to have your personal bests saved, to set records, to earn points and to appear on the rankings!";HUDMSG_PLAIN,400,CR_WHITE,512.0,600.0, 3.0);
+        delay(35*3);
+    }
+	str yourname = GetPlayerAccountName(playernumber()); 
 	//print(s:"400 executing (debug)");
-	if (GetDBEntryInt ("PlayerIds", yourname ) == 0) //if there is no ID associated with your name
+	if (GetDBEntry ("PlayerIds", yourname ) == 0) //if there is no ID associated with your name
 	{
 		//print(s:"making account (debug)");
 		for (int i = 1; i < MAXIDS; i++) //find a spare id and set that to his name
@@ -757,7 +765,7 @@ script 400 ENTER NET
 			}
 		}
 	}
-	str yourid = strparam(i:GetDBEntryInt ("PlayerIds", yourname ));
+	str yourid = strparam(i:GetDBEntry ("PlayerIds", yourname ));
 	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
 	str maplumppbs = strparam(s:maplump,s:"pbs");
 	str maplumprank = strparam(s:maplump,s:"rank");
@@ -770,8 +778,8 @@ script 400 ENTER NET
 	{
 		//print(s:"getting rec (debug)");
 		str smodepbspace = strparam(s:maplumppbs,s:"s",i:skill);
-		if (GetDBEntryInt (smodepbspace,yourid) != 0)
-			best_timealltime(GetDBEntryInt (smodepbspace,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid));
+		if (GetDBEntry (smodepbspace,yourid) != 0)
+			best_timealltime(GetDBEntry (smodepbspace,yourid),GetDBEntryRank (maplumppbs,yourid, 0 ),GetDBEntry (maplumppoints,yourid));
 	}
 }
 
@@ -780,35 +788,35 @@ script 411 (void)
 	int iterations = 0;
 	while(gone[playernumber()] == 0 && roundover == false)
 	{
-		str yourname = strparam(n:0); //have to do this because strparam only lasts 1 tic
-		str yourid = strparam(i:GetDBEntryInt ("PlayerIds", yourname )); 
+		str yourname = GetPlayerAccountName(playernumber());  //have to do this because strparam only lasts 1 tic
+		str yourid = strparam(i:GetDBEntry ("PlayerIds", yourname )); 
 		str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
 		str maplumppbs = strparam(s:maplump,s:"pbs");
 		str maplumprank = strparam(s:maplump,s:"rank");
 		str maplumppoints = strparam(s:maplump,s:"points");
 		
-		if (GetDBEntryInt (maplumppbs,yourid) != 0)
-			best_timealltime(GetDBEntryInt (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid)); //show your all time personal best
-		if (GetDBEntryInt ("totalpoints",yourid) != 0)
+		if (GetDBEntry (maplumppbs,yourid) != 0)
+			best_timealltime(GetDBEntry (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, 0),GetDBEntry (maplumppoints,yourid)); //show your all time personal best
+		if (GetDBEntry ("totalpoints",yourid) != 0)
 		{
 			setfont("smallfont");
-			hudmessage(s:"Total points on server: ",i:GetDBEntryInt ("totalpoints",yourid),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",yourid, FALSE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+			hudmessage(s:"Total points on server: ",i:GetDBEntry ("totalpoints",yourid),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",yourid, TRUE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
 		}
-		//if (GetDBEntryInt (maplumppbs,yourid) != 0)
+		//if (GetDBEntry (maplumppbs,yourid) != 0)
 		//{
-			//SetDBEntryInt (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, TRUE));
-			//SetDBEntryInt (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, TRUE)));
+			//SetDBEntry (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, TRUE));
+			//SetDBEntry (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, TRUE)));
 		//}
 		
 		//if (iterations == 0) //don't execute this too frequently
 		//{
 			//iterations++;
-			//acs_execute(464,0,GetDBEntryInt ("PlayerIds", yourname ));
+			//acs_execute(464,0,GetDBEntry ("PlayerIds", yourname ));
 		//}
 		//else
 			//iterations = 0;
 		
-		delay(35*4 + playernumber()*5);
+		delay(35*4 + playernumber()*1);
 	}
 }
 
@@ -834,20 +842,20 @@ script 402 OPEN NET
 			players = startplayercount;
 		str timekey = strparam(s:"SModeRecordTimeP",i:players,s:"s",i:skill);
 		//printbold(s:timekey); //debug
-		if (GetDBEntryInt (maplump, timekey ) != 0)
+		if (GetDBEntry (maplump, timekey ) != 0)
 		{
 			setfont("smallfont");
 			show_author(0.05,0.43, "");
-			show_therecord(GetDBEntryInt (maplump, timekey ));
+			show_therecord(GetDBEntry (maplump, timekey ));
 		}
 	}
-	else if (GetDBEntryInt (maplump, "MapRecordTime" ) != 0) //show global map record
+	else if (GetDBEntry (maplump, "MapRecordTime" ) != 0) //show global map record
 	{
 		setfont("smallfont");
 		show_author(0.05,0.43, "");
-		show_therecord(GetDBEntryInt (maplump, "MapRecordTime" ));
+		show_therecord(GetDBEntry (maplump, "MapRecordTime" ));
 	}
-	if (GetDBEntryInt ("MapIds", maplump ) == 0) //set map id
+	if (GetDBEntry ("MapIds", maplump ) == 0) //set map id
 	{
 		for (int i = 1; i < MAXIDS; i++) //find a spare id and set that to map lump name
 		{
@@ -979,43 +987,48 @@ script 401 (void) //displays final scores then exits
 
 script 404 (int timec, int player) //for checking new time against record
 {
+	if (PlayerIsLoggedIn(playernumber()) == 0)
+    {
+		print(s:"Please log in to set times!");
+        terminate;
+    }
 	int gotrec;
 	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
-	if (timec < GetDBEntryInt (maplump, "MapRecordTime" ) && timec != 0 || GetDBEntryInt (maplump, "MapRecordTime" ) == 0 && timec != 0) //if the time is quicker than record
+	if (timec < GetDBEntry (maplump, "MapRecordTime" ) && timec != 0 || GetDBEntry (maplump, "MapRecordTime" ) == 0 && timec != 0) //if the time is quicker than record
 	{
-		str recauthor = strparam(n:player + 1);
+		str recauthor = GetPlayerAccountName(playernumber());
 		SetDBEntryString (maplump, "MapRecordAuthor", recauthor );
-		SetDBEntryInt (maplump, "MapRecordTime", timec );
+		SetDBEntry (maplump, "MapRecordTime", timec );
 		printbold(s:"record has been set"); //debug
 		show_author(0.05,0.43, "");
-		show_therecord(GetDBEntryInt (maplump, "MapRecordTime" ));
+		show_therecord(GetDBEntry (maplump, "MapRecordTime" ));
 		ambientSound( "JM2HSWIN", 127 );
 		gotrec = 1;
 	}
 	str maplumppbs = strparam(s:maplump,s:"pbs");
 	str maplumprank = strparam(s:maplump,s:"rank");
 	str maplumppoints = strparam(s:maplump,s:"points");
-	str yourname = strparam(n:0);
-	if (GetDBEntryInt ("PlayerIds", yourname ) == 0)
+	str yourname = GetPlayerAccountName(playernumber()); 
+	if (GetDBEntry ("PlayerIds", yourname ) == 0)
 		terminate;
-	str yourid = strparam(i:GetDBEntryInt ("PlayerIds", yourname ));
-	if (timec < GetDBEntryInt (maplumppbs,yourid) && timec != 0)  
+	str yourid = strparam(i:GetDBEntry ("PlayerIds", yourname ));
+	if (timec < GetDBEntry (maplumppbs,yourid) && timec != 0)  
 	{
-		SetDBEntryInt (maplumppbs, yourid, timec );
-		SetDBEntryInt (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, TRUE));
-		SetDBEntryInt (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, TRUE)));
-		best_timealltime(GetDBEntryInt (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid));
+		SetDBEntry (maplumppbs, yourid, timec );
+		SetDBEntry (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, 0));
+		SetDBEntry (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, 0)));
+		best_timealltime(GetDBEntry (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, 0 ),GetDBEntry (maplumppoints,yourid));
 		if (gotrec == 0)
 			 LocalAmbientSound("pbest", 127);
-		//acs_execute(464,0,GetDBEntryInt ("PlayerIds", yourname ));
+		acs_executealways(469,0);
 	}
-	else if (GetDBEntryInt (maplumppbs,yourid) == 0 && timec != 0)
+	else if (GetDBEntry (maplumppbs,yourid) == 0 && timec != 0)
 	{
-		SetDBEntryInt (maplumppbs, yourid, timec );
-		SetDBEntryInt (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, TRUE));
-		SetDBEntryInt (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, TRUE)));
-		best_timealltime(GetDBEntryInt (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, TRUE ),GetDBEntryInt (maplumppoints,yourid));
-		//acs_execute(464,0,GetDBEntryInt ("PlayerIds", yourname ));
+		SetDBEntry (maplumppbs, yourid, timec );
+		SetDBEntry (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, 0));
+		SetDBEntry (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, 0)));
+		best_timealltime(GetDBEntry (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, 0 ),GetDBEntry (maplumppoints,yourid));
+		acs_executealways(469,0);
 		LocalAmbientSound("pbest", 127);
 	}	
 }
@@ -1358,7 +1371,7 @@ function void show_author(int posx, int posy, int modifier)
 	}
 }
 function void show_therecord(int p_time) {
- //record author is stored in an array of characters
+ //
     int mins = to_mins(p_time);
     int secs = to_secs(p_time);
     int mils = to_mils(p_time);
@@ -1455,7 +1468,7 @@ script 456 (void)
 			entries = herp + 1;
 			break;
 		}
-		alltimes[herp][F_TIME] = GetDBEntryInt (maplumppbs,herpid); //set the value at index "herp" to the top time of player "herp"
+		alltimes[herp][F_TIME] = GetDBEntry (maplumppbs,herpid); //set the value at index "herp" to the top time of player "herp"
 		alltimes[herp][F_NAME] = GetDBEntryString ("PlayerNames", herpid );
 	}
 	//log(s:"first loop done");
@@ -1468,63 +1481,63 @@ script 456 (void)
 	hsortDB(entries); //shll sort
 	//log(s:"3rd loop done");
 	*/
-	int Top5 = QuerySortedDBEntries (maplumppbs, 5, 0, 1 );
+	int Top5 = SortDBEntries (maplumppbs, 5, 0, 0 );
 	setfont("BIGFONT");
 	hudmessagebold(s:"All Time Top Five"; HUDMSG_PLAIN, 500, CR_WHITE, 0.5, 0.1, 0);
-	int numEntries = GetDBResultSize(Top5);
+	int numEntries = CountDBResults(Top5);
 	if (numEntries == 0) //if there is no top 5
 	{
 		printbold(s:"No personal bests for this map are in the database"); 
 		delay(TICRATE*5);
-		ClearDBResultHandle ( Top5 );
+		FreeDBResults ( Top5 );
 		zr_exit2();
 	}
 	else
 	{
-		alltime(GetDBEntryInt (maplumppbs,GetDBResultEntryNameString(Top5, 0)), GetDBEntryString ("PlayerNames", GetDBResultEntryNameString(Top5, 0)), 0.2, "\ca1st", 501); //show the highest ranking entry as first place
+		alltime(GetDBEntry (maplumppbs,GetDBResultKeyString(Top5, 0)), GetDBEntryString ("PlayerNames", GetDBResultKeyString(Top5, 0)), 0.2, "\ca1st", 501); //show the highest ranking entry as first place
 	}
 	if (numEntries == 1) 
 	{
 		delay(TICRATE*10); //wait, and then exit, don't display second place as he didn't get a time
-		ClearDBResultHandle ( Top5 );
+		FreeDBResults ( Top5 );
 		zr_exit2(); 
 	}
 	else
 	{
-		alltime(GetDBEntryInt (maplumppbs,GetDBResultEntryNameString(Top5, 1)), GetDBEntryString ("PlayerNames", GetDBResultEntryNameString(Top5, 1)), 0.3, "\cb2nd", 502); //otherwise show second place
+		alltime(GetDBEntry (maplumppbs,GetDBResultKeyString(Top5, 1)), GetDBEntryString ("PlayerNames", GetDBResultKeyString(Top5, 1)), 0.3, "\cb2nd", 502); //otherwise show second place
 	}
 	if (numEntries == 2) 
 	{
 		delay(TICRATE*10);
-		ClearDBResultHandle ( Top5 );
+		FreeDBResults ( Top5 );
 		zr_exit2();
 	}
 	else
 	{
-		alltime(GetDBEntryInt (maplumppbs,GetDBResultEntryNameString(Top5, 2)), GetDBEntryString ("PlayerNames", GetDBResultEntryNameString(Top5, 2)), 0.4, "\cc3rd", 503);
+		alltime(GetDBEntry (maplumppbs,GetDBResultKeyString(Top5, 2)), GetDBEntryString ("PlayerNames", GetDBResultKeyString(Top5, 2)), 0.4, "\cc3rd", 503);
 	}
 	if (numEntries  == 3)
 	{
 		delay(TICRATE*10);
-		ClearDBResultHandle ( Top5 );
+		FreeDBResults ( Top5 );
 		zr_exit2();
 	}
 	else
 	{
-		alltime(GetDBEntryInt (maplumppbs,GetDBResultEntryNameString(Top5, 3)), GetDBEntryString ("PlayerNames", GetDBResultEntryNameString(Top5, 3)), 0.5, "\cd4th", 504);
+		alltime(GetDBEntry (maplumppbs,GetDBResultKeyString(Top5, 3)), GetDBEntryString ("PlayerNames", GetDBResultKeyString(Top5, 3)), 0.5, "\cd4th", 504);
 	}
 	if (numEntries  == 4)
 	{
 		delay(TICRATE*10);
-		ClearDBResultHandle ( Top5 );
+		FreeDBResults ( Top5 );
 		zr_exit2();
 	}
 	else
 	{
-		alltime(GetDBEntryInt (maplumppbs,GetDBResultEntryNameString(Top5, 4)), GetDBEntryString ("PlayerNames", GetDBResultEntryNameString(Top5, 4)), 0.6, "\ce5th", 505);
+		alltime(GetDBEntry (maplumppbs,GetDBResultKeyString(Top5, 4)), GetDBEntryString ("PlayerNames", GetDBResultKeyString(Top5, 4)), 0.6, "\ce5th", 505);
 	}
 	delay(TICRATE*10);
-	ClearDBResultHandle ( Top5 );
+	FreeDBResults ( Top5 );
 	zr_exit2();
 }
 	
@@ -1569,20 +1582,20 @@ script 452 UNLOADING //SINGLE MODE
 			{
 				str smodepbspace = strparam(s:maplump,s:"pbss",i:skill);
 				str playername = strparam(n:exiter[0] + 1);
-				str playerid = strparam(i:GetDBEntryInt ("PlayerIds", playername));
-				if (p_time < GetDBEntryInt (smodepbspace, playerid ) && p_time != 0 || GetDBEntryInt (smodepbspace, playerid ) == 0 && p_time != 0)
+				str playerid = strparam(i:GetDBEntry ("PlayerIds", playername));
+				if (p_time < GetDBEntry (smodepbspace, playerid ) && p_time != 0 || GetDBEntry (smodepbspace, playerid ) == 0 && p_time != 0)
 				{
-					SetDBEntryInt (smodepbspace, playerid, p_time );
+					SetDBEntry (smodepbspace, playerid, p_time );
 				}
 			}
 			str timekey = strparam(s:"SModeRecordTimeP",i:players,s:"s",i:skill);
-			if (p_time < GetDBEntryInt (maplump, timekey ) && p_time != 0 || GetDBEntryInt (maplump, timekey ) == 0 && p_time != 0)
+			if (p_time < GetDBEntry (maplump, timekey ) && p_time != 0 || GetDBEntry (maplump, timekey ) == 0 && p_time != 0)
 			{
 				printbold(s:"Record beaten!!");
 				str authorkey = strparam(s:"SModeAuthor1p",i:players,s:"s",i:skill);
 				str authorname1 = strparam(n:exiter[0] + 1);
 				SetDBEntryString (maplump, authorkey, authorname1 );
-				SetDBEntryInt (maplump, timekey, p_time );
+				SetDBEntry (maplump, timekey, p_time );
 				if (playeri > 0) //save additional authors
 				{
 					for (int i = 1; i < playeri + 1; i++)
@@ -1621,11 +1634,11 @@ script 455 (void) NET
 	//print(s:tempauthors[0],s:"\n",s:tempauthors[1],s:"\n",s:tempauthors[2],s:"\n",s:tempauthors[3]);
 	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
 	str maplumppbs = strparam(s:maplump,s:"pbs");
-	str yourname = strparam(n:0);
-	if (GetDBEntryInt ("PlayerIds", yourname ) == 0)
+	str yourname = GetPlayerAccountName(playernumber()); 
+	if (GetDBEntry ("PlayerIds", yourname ) == 0)
 		terminate;
-	str yourid = strparam(i:GetDBEntryInt ("PlayerIds", yourname ));
-	print(s:"Your best: ",i:GetDBEntryInt (maplumppbs,yourid));
+	str yourid = strparam(i:GetDBEntry ("PlayerIds", yourname ));
+	print(s:"Your best: ",i:GetDBEntry (maplumppbs,yourid));
 }
 
 // ===========PERSONAL TELEPORT==========
@@ -1720,10 +1733,10 @@ script 462 (void)
 			print(s:"breaking with player id: ",s:playerid);
 			break;
 		}
-		if (GetDBEntryInt (maplumppbs, playerid ) != 0)
+		if (GetDBEntry (maplumppbs, playerid ) != 0)
 		{
-			SetDBEntryInt (maplumprank, playerid, GetDBEntryRank (maplumppbs,playerid, TRUE));
-			SetDBEntryInt (maplumppoints, playerid, getpoints(GetDBEntryRank (maplumppbs,playerid, TRUE)));
+			SetDBEntry (maplumprank, playerid, GetDBEntryRank (maplumppbs,playerid, 0));
+			SetDBEntry (maplumppoints, playerid, getpoints(GetDBEntryRank (maplumppbs,playerid, 0)));
 		}
 	}
 }
@@ -1744,22 +1757,29 @@ function int getpoints (int rank)
 
 script 463 (void) //this is a hefty script, puke with caution
 {
+	//printbold(s:"463 executing");
 	for (int i = 1; i < MAXIDS; i++)
 	{
 		int points = 0;
 		str playerid = strparam(i:i);
 		if (StrLen(GetDBEntryString ("PlayerNames", playerid )) == 0 || GetDBEntryString ("PlayerNames", playerid ) == "")
 			break;
+		int a = 0;
 		for (int l = 1; l < MAXIDS; l++) 
 		{
+			str playerid2 = strparam(i:i);
 			str mapid = strparam(i:l);
 			if (StrLen(GetDBEntryString ("MapNames", mapid )) == 0 || GetDBEntryString ("MapNames", mapid ) == "")
 				break;
 			str maplumppoints = strparam(s:GetDBEntryString ("MapNames", mapid ),s:"points");
-			points += GetDBEntryInt(maplumppoints,playerid);	
+			points += GetDBEntry(maplumppoints,playerid2);	
+			if (a == 15)
+				delay(1);
+			else
+				a++;
 		}
-		SetDBEntryInt ("totalpoints", playerid, points);
-		delay(5);
+		str playerid3 = strparam(i:i);
+		SetDBEntry ("totalpoints", playerid3, points);
 	}
 }
 
@@ -1777,11 +1797,11 @@ script 464 (int id)
 		if (StrLen(GetDBEntryString ("MapNames", mapid )) == 0 || GetDBEntryString ("MapNames", mapid ) == "")
 			break;
 		str maplumppoints = strparam(s:GetDBEntryString ("MapNames", mapid ),s:"points");
-		points += GetDBEntryInt(maplumppoints,playerid);	
+		points += GetDBEntry(maplumppoints,playerid);	
 	}
-	SetDBEntryInt ("totalpoints", playerid, points);
+	SetDBEntry ("totalpoints", playerid, points);
 	setfont("smallfont");
-	hudmessage(s:"Total points on server: ",i:GetDBEntryInt ("totalpoints",playerid),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",playerid, FALSE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+	hudmessage(s:"Total points on server: ",i:GetDBEntry ("totalpoints",playerid),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",playerid, TRUE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
 }
 
 //maps execute this to clear inventory on teleport
@@ -1800,15 +1820,17 @@ script 467 (int player) DISCONNECT
 	gone[player] = 1;
 }
 
-script 469 OPEN //global DB map updator
+script 469 (void) //global DB map updator
 {
+	while (updating == 1)
+		delay(60);
+	updating = 1;
+	//printbold(s:"469 executing");
 	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
 	str maplumppbs = strparam(s:maplump,s:"pbs");
 	str maplumprank = strparam(s:maplump,s:"rank");
 	str maplumppoints = strparam(s:maplump,s:"points");
 	//print(s:"(debug) hypno points: ",i:getpoints(GetDBEntryRank (maplumppbs,1, TRUE)));
-	While(TRUE)
-	{
 		for (int i = 1; i < MAXIDS; i++) 
 		{
 			str playerid = strparam(i:i);
@@ -1817,18 +1839,17 @@ script 469 OPEN //global DB map updator
 				//print(s:"breaking with player id: ",s:playerid);
 				break;
 			}
-			if (GetDBEntryInt (maplumppbs, playerid ) != 0)
+			if (GetDBEntry (maplumppbs, playerid ) != 0)
 			{
-				if (GetDBEntryInt(maplumprank, playerid) != GetDBEntryRank (maplumppbs,playerid, TRUE))
+				if (GetDBEntry(maplumprank, playerid) != GetDBEntryRank (maplumppbs,playerid, 0))
 				{
-					SetDBEntryInt (maplumprank, playerid, GetDBEntryRank (maplumppbs,playerid, TRUE));
-					SetDBEntryInt (maplumppoints, playerid, getpoints(GetDBEntryRank (maplumppbs,playerid, TRUE)));
+					SetDBEntry (maplumprank, playerid, GetDBEntryRank (maplumppbs,playerid, 0));
+					SetDBEntry (maplumppoints, playerid, getpoints(GetDBEntryRank (maplumppbs,playerid, 0)));
 				}
 			}
 		}
-		acs_executewait(463,0);
 		delay(60);
-		//printbold(s:"looping 469");
-	}
+		acs_executewait(463,0);
+		updating = 0;
 	
 }

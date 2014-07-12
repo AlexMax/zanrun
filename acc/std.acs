@@ -909,6 +909,9 @@ enum {
    GAMEEVENT_ROUND_ENDS
 };
 
+enum DB_ORDER_DESC = false;
+enum DB_ORDER_ASC = true;
+
 // Action specials
 // Tail format: = <action-special-number> , <script-callable>
 int Polyobj_StartLine( int, int, int, int ) = 1, 0;
@@ -1233,19 +1236,20 @@ int GetPlayerLivesLeft( int ) -= 104;
 bool SetPlayerLivesLeft( int, int ) -= 105;
 bool KickFromGame( int, str ) -= 106;
 int GetGamemodeState() -= 107;
-void SetDBEntryInt( str, str, int ) -= 108;
-int GetDBEntryInt( str, str ) -= 109;
+void SetDBEntry( str, str, int ) -= 108;
+int GetDBEntry( str, str ) -= 109;
 void SetDBEntryString( str, str, str ) -= 110;
 str GetDBEntryString( str, str ) -= 111;
-void IncrementDBEntryInt( str, str, int ) -= 112;
+void IncrementDBEntry( str, str, int ) -= 112;
 bool PlayerIsLoggedIn( int ) -= 113;
 str GetPlayerAccountName( int ) -= 114;
-int QuerySortedDBEntries( str, int, int, bool ) -= 115;
-int GetDBResultSize( int ) -= 116;
-void ClearDBResultHandle( int ) -= 117;
-str GetDBResultEntryNameString( int, int ) -= 118;
-str GetDBResultEntryValueString( int, int ) -= 119;
-int GetDBEntryRank( str, str, bool ) -= 120;
+int SortDBEntries( str, int, int, bool ) -= 115;
+int CountDBResults( int ) -= 116;
+void FreeDBResults( int ) -= 117;
+str GetDBResultKeyString( int, int ) -= 118;
+str GetDBResultValueString( int, int ) -= 119;
+int GetDBResultValue( int, int ) -= 120;
+int GetDBEntryRank( str, str, bool ) -= 121;
 
 // Dedicated functions
 // Tail format: += <opcode> , <is-latent>
