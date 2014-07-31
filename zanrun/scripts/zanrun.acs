@@ -1015,8 +1015,15 @@ script 404 (int timec, int player) //for checking new time against record
 	if (timec < GetDBEntry (maplumppbs,yourid) && timec != 0)  
 	{
 		SetDBEntry (maplumppbs, yourid, timec );
-		SetDBEntry (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, 0));
-		SetDBEntry (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, 0)));
+		if (GetDBEntryRank (maplumppbs,yourid, 0) != GetDBEntry (maplumprank, yourid))
+		{
+			SetDBEntry (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, 0));
+			int newpoints = getpoints(GetDBEntryRank (maplumppbs,yourid, 0));
+			int newtotal = GetDBEntry ("totalpoints", yourid ) - GetDBEntry (maplumppoints, yourid ) + newpoints;
+			SetDBEntry ("totalpoints", yourid, newtotal);
+			SetDBEntry (maplumppoints, yourid, newpoints);
+			acs_executealways(469,0);
+		}
 		best_timealltime(GetDBEntry (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, 0 ),GetDBEntry (maplumppoints,yourid));
 		if (gotrec == 0)
 			 LocalAmbientSound("pbest", 127);
@@ -1025,10 +1032,16 @@ script 404 (int timec, int player) //for checking new time against record
 	else if (GetDBEntry (maplumppbs,yourid) == 0 && timec != 0)
 	{
 		SetDBEntry (maplumppbs, yourid, timec );
-		SetDBEntry (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, 0));
-		SetDBEntry (maplumppoints, yourid, getpoints(GetDBEntryRank (maplumppbs,yourid, 0)));
+		if (GetDBEntryRank (maplumppbs,yourid, 0) != GetDBEntry (maplumprank, yourid))
+		{
+			SetDBEntry (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, 0));
+			int newpoints2 = getpoints(GetDBEntryRank (maplumppbs,yourid, 0));
+			int newtotal2 = GetDBEntry ("totalpoints", yourid ) - GetDBEntry (maplumppoints, yourid ) + newpoints2;
+			SetDBEntry ("totalpoints", yourid, newtotal2);
+			SetDBEntry (maplumppoints, yourid, newpoints2);
+			acs_executealways(469,0);
+		}
 		best_timealltime(GetDBEntry (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, 0 ),GetDBEntry (maplumppoints,yourid));
-		acs_executealways(469,0);
 		LocalAmbientSound("pbest", 127);
 	}	
 }
@@ -1843,13 +1856,16 @@ script 469 (void) //global DB map updator
 			{
 				if (GetDBEntry(maplumprank, playerid) != GetDBEntryRank (maplumppbs,playerid, 0))
 				{
+					int newpoints = getpoints(GetDBEntryRank (maplumppbs,playerid, 0));
 					SetDBEntry (maplumprank, playerid, GetDBEntryRank (maplumppbs,playerid, 0));
-					SetDBEntry (maplumppoints, playerid, getpoints(GetDBEntryRank (maplumppbs,playerid, 0)));
+					int newtotal = GetDBEntry ("totalpoints", playerid ) - GetDBEntry (maplumppoints, playerid ) + newpoints;
+					SetDBEntry ("totalpoints", playerid, newtotal);
+					SetDBEntry (maplumppoints, playerid, newpoints);
 				}
 			}
 		}
 		delay(60);
-		acs_executewait(463,0);
+		//acs_executewait(463,0);
 		updating = 0;
 	
 }
