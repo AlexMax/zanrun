@@ -1,1 +1,3 @@
 make binds puke negative
+fix personal tp voodoo (disable if player is dead)
+remove doors from test subject

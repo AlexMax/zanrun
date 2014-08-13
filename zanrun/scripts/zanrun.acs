@@ -40,6 +40,7 @@ str playerarmortype[PLAYERMAX];
 int teleportclearinv;
 int gone[64];
 int updating;
+int flagsset;
 
 //============Personal Timer, Checkpoints and Personal Bests================
 
@@ -473,7 +474,7 @@ function void best_time(int p_time) {
     }
 }
 
-function void best_timealltime(int p_time, int rank, int points) {
+function void best_timealltime(int p_time, int rank) {
     int mins = to_mins(p_time);
     int secs = to_secs(p_time);
     int mils = to_mils(p_time);
@@ -482,45 +483,98 @@ function void best_timealltime(int p_time, int rank, int points) {
     if (mins == 0) {
         if (mils < 10) {
 			setfont("smallfont");
-            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".00",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
+            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".00",d:mils,s:"\nRank: ",i:rank;
                 HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
         } else if (mils < 100) {
 			setfont("smallfont");
-            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".0",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
+            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".0",d:mils,s:"\nRank: ",i:rank;
                 HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
         } else {
 			setfont("smallfont");
-            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
+            hudmessage(s:"Personal Best (all time):\n",d:secs,s:".",d:mils,s:"\nRank: ",i:rank;
                 HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
         }
     } else {
         if (secs < 10) {
             if (mils < 10) {
 				setfont("smallfont");
-                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".00",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".00",d:mils,s:"\nRank: ",i:rank;
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             } else if (mils < 100) {
 				setfont("smallfont");
-                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".0",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".0",d:mils,s:"\nRank: ",i:rank;
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             } else {
 				setfont("smallfont");
-                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":0",d:secs,s:".",d:mils,s:"\nRank: ",i:rank;
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             }
         } else {
             if (mils < 10) {
 				setfont("smallfont");
-                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".00",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".00",d:mils,s:"\nRank: ",i:rank;
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             } else if (mils < 100) {
 				setfont("smallfont");
-                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".0",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".0",d:mils,s:"\nRank: ",i:rank;
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
             } else {
 				setfont("smallfont");
-                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".",d:mils,s:"\nRank: ",i:rank,s:" (",i:points,s:" points)";
+                hudmessage(s:"Personal Best (all time):\n",d:mins,s:":",d:secs,s:".",d:mils,s:"\nRank: ",i:rank;
                     HUDMSG_PLAIN, 303, CR_WHITE, 0.05, 0.7, 0);
+            }
+        }
+    }
+}
+
+function void totalbesttime(int p_time, int rank) {
+    int mins = to_mins(p_time);
+    int secs = to_secs(p_time);
+    int mils = to_mils(p_time);
+
+    // Any minutes?
+    if (mins == 0) {
+        if (mils < 10) {
+			setfont("smallfont");
+            hudmessage(s:"Total time on server:\n",d:secs,s:".00",d:mils,s:"\nOverall rank: ",i:rank;
+                HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+        } else if (mils < 100) {
+			setfont("smallfont");
+            hudmessage(s:"Total time on server:\n",d:secs,s:".0",d:mils,s:"\nOverall rank: ",i:rank;
+                HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+        } else {
+			setfont("smallfont");
+            hudmessage(s:"Total time on server:\n",d:secs,s:".",d:mils,s:"\nOverall rank: ",i:rank;
+                HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+        }
+    } else {
+        if (secs < 10) {
+            if (mils < 10) {
+				setfont("smallfont");
+                hudmessage(s:"Total time on server:\n",d:mins,s:":0",d:secs,s:".00",d:mils,s:"\nOverall rank: ",i:rank;
+                    HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+            } else if (mils < 100) {
+				setfont("smallfont");
+                hudmessage(s:"Total time on server:\n",d:mins,s:":0",d:secs,s:".0",d:mils,s:"\nOverall rank: ",i:rank;
+                    HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+            } else {
+				setfont("smallfont");
+                hudmessage(s:"Total time on server:\n",d:mins,s:":0",d:secs,s:".",d:mils,s:"\nOverall rank: ",i:rank;
+                    HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+            }
+        } else {
+            if (mils < 10) {
+				setfont("smallfont");
+                hudmessage(s:"Total time on server:\n",d:mins,s:":",d:secs,s:".00",d:mils,s:"\nOverall rank: ",i:rank;
+                    HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+            } else if (mils < 100) {
+				setfont("smallfont");
+                hudmessage(s:"Total time on server:\n",d:mins,s:":",d:secs,s:".0",d:mils,s:"\nOverall rank: ",i:rank;
+                    HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
+            } else {
+				setfont("smallfont");
+                hudmessage(s:"Total time on server:\n",d:mins,s:":",d:secs,s:".",d:mils,s:"\nOverall rank: ",i:rank;
+                    HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
             }
         }
     }
@@ -741,6 +795,10 @@ int skill;
 
 script 400 ENTER NET
 {
+	while(flagsset == 0)
+	{
+		delay(10);
+	}
 	gone[playernumber()] = 0;
 	while(PlayerIsLoggedIn(playernumber()) == 0)
     {
@@ -761,6 +819,7 @@ script 400 ENTER NET
 			{
 				SetDBEntryString ("PlayerNames", playerid, yourname);
 				SetDBEntryString ("PlayerIds", yourname, playerid);
+				SetDBEntry ("mapsdone", playerid, 0);
 				break;
 			}
 		}
@@ -769,7 +828,17 @@ script 400 ENTER NET
 	str maplump = strtoupper(strparam(n:PRINTNAME_LEVEL));
 	str maplumppbs = strparam(s:maplump,s:"pbs");
 	str maplumprank = strparam(s:maplump,s:"rank");
-	str maplumppoints = strparam(s:maplump,s:"points");
+	int lasttotalmaps = GetDBEntry ("lastotalmaps", yourid);
+	if (lasttotalmaps < GetCvar("zr_totalmaps"))
+	{
+		int newtotal = GetDBEntry ("totaltime",yourid) + GetCvar("zr_maxtime")*(GetCvar("zr_totalmaps") - lasttotalmaps);
+		SetDBEntry("totaltime",yourid,newtotal);
+	}
+	else if (lasttotalmaps > GetCvar("zr_totalmaps"))
+	{
+		printbold(s:"this server's database contains times that shouldn't be counted, get an admin to puke 469 when server is empty");
+	}
+	SetDBEntry ("lastotalmaps", yourid,GetCvar("zr_totalmaps"));
 	if (getcvar("z_smode") == 0)
 	{
 		acs_executealways(411,0);
@@ -779,7 +848,7 @@ script 400 ENTER NET
 		//print(s:"getting rec (debug)");
 		str smodepbspace = strparam(s:maplumppbs,s:"s",i:skill);
 		if (GetDBEntry (smodepbspace,yourid) != 0)
-			best_timealltime(GetDBEntry (smodepbspace,yourid),GetDBEntryRank (maplumppbs,yourid, 0 ),GetDBEntry (maplumppoints,yourid));
+			best_timealltime(GetDBEntry (smodepbspace,yourid),GetDBEntryRank (maplumppbs,yourid, 0 ));
 	}
 }
 
@@ -796,12 +865,9 @@ script 411 (void)
 		str maplumppoints = strparam(s:maplump,s:"points");
 		
 		if (GetDBEntry (maplumppbs,yourid) != 0)
-			best_timealltime(GetDBEntry (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, 0),GetDBEntry (maplumppoints,yourid)); //show your all time personal best
-		if (GetDBEntry ("totalpoints",yourid) != 0)
-		{
-			setfont("smallfont");
-			hudmessage(s:"Total points on server: ",i:GetDBEntry ("totalpoints",yourid),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",yourid, TRUE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
-		}
+			best_timealltime(GetDBEntry (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, 0)); //show your all time personal best
+		setfont("smallfont");
+		totalbesttime(GetDBEntry ("totaltime",yourid),GetDBEntryRank ("totaltime",yourid, FALSE ));
 		//if (GetDBEntry (maplumppbs,yourid) != 0)
 		//{
 			//SetDBEntry (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, TRUE));
@@ -987,6 +1053,11 @@ script 401 (void) //displays final scores then exits
 
 script 404 (int timec, int player) //for checking new time against record
 {
+	if(flagsset == 0)
+	{
+		printbold(s:"Error, flags zr_totalmaps and zr_maxtime have not been set, DB access denied for safety");
+		terminate;
+	}
 	if (PlayerIsLoggedIn(playernumber()) == 0)
     {
 		print(s:"Please log in to set times!");
@@ -1014,35 +1085,24 @@ script 404 (int timec, int player) //for checking new time against record
 	str yourid = strparam(i:GetDBEntry ("PlayerIds", yourname ));
 	if (timec < GetDBEntry (maplumppbs,yourid) && timec != 0)  
 	{
+		int newtotal = timec - GetDBEntry (maplumppbs,yourid) + GetDBEntry ("totaltime",yourid);
+		SetDBEntry("totaltime",yourid,newtotal);
 		SetDBEntry (maplumppbs, yourid, timec );
-		if (GetDBEntryRank (maplumppbs,yourid, 0) != GetDBEntry (maplumprank, yourid))
-		{
-			SetDBEntry (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, 0));
-			int newpoints = getpoints(GetDBEntryRank (maplumppbs,yourid, 0));
-			int newtotal = GetDBEntry ("totalpoints", yourid ) - GetDBEntry (maplumppoints, yourid ) + newpoints;
-			SetDBEntry ("totalpoints", yourid, newtotal);
-			SetDBEntry (maplumppoints, yourid, newpoints);
-			acs_executealways(469,0);
-		}
-		best_timealltime(GetDBEntry (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, 0 ),GetDBEntry (maplumppoints,yourid));
+		best_timealltime(GetDBEntry (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, 0 ));
+		totalbesttime(GetDBEntry ("totaltime",yourid),GetDBEntryRank ("totaltime",yourid, FALSE ));
 		if (gotrec == 0)
-			 LocalAmbientSound("pbest", 127);
-		acs_executealways(469,0);
+			LocalAmbientSound("pbest", 127);
 	}
 	else if (GetDBEntry (maplumppbs,yourid) == 0 && timec != 0)
 	{
+		int newtotal = timec - getcvar("zr_maxtime") + GetDBEntry ("totaltime",yourid);
+		SetDBEntry("totaltime",yourid,newtotal);
 		SetDBEntry (maplumppbs, yourid, timec );
-		if (GetDBEntryRank (maplumppbs,yourid, 0) != GetDBEntry (maplumprank, yourid))
-		{
-			SetDBEntry (maplumprank, yourid, GetDBEntryRank (maplumppbs,yourid, 0));
-			int newpoints2 = getpoints(GetDBEntryRank (maplumppbs,yourid, 0));
-			int newtotal2 = GetDBEntry ("totalpoints", yourid ) - GetDBEntry (maplumppoints, yourid ) + newpoints2;
-			SetDBEntry ("totalpoints", yourid, newtotal2);
-			SetDBEntry (maplumppoints, yourid, newpoints2);
-			acs_executealways(469,0);
-		}
-		best_timealltime(GetDBEntry (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, 0 ),GetDBEntry (maplumppoints,yourid));
-		LocalAmbientSound("pbest", 127);
+		best_timealltime(GetDBEntry (maplumppbs,yourid),GetDBEntryRank (maplumppbs,yourid, 0 ));
+		IncrementDBEntry ("mapsdone", yourid, 1);
+		totalbesttime(GetDBEntry ("totaltime",yourid),GetDBEntryRank ("totaltime",yourid, FALSE ));
+		if (gotrec == 0)
+			LocalAmbientSound("pbest", 127);
 	}	
 }
 
@@ -1692,6 +1752,8 @@ script 461 (void) NET
 			print(s:"No teleport destination set, did you spawn it too close to a wall?");
 			terminate;
 		}
+		if (GetActorProperty(0,APROP_Health) < 1)
+			terminate;
 		if (teleportclearinv == 1)
 			acs_executealways(100,0);
 		else
@@ -1767,7 +1829,7 @@ function int getpoints (int rank)
 	}
 	return ret;
 }
-
+/*
 script 463 (void) //this is a hefty script, puke with caution
 {
 	//printbold(s:"463 executing");
@@ -1816,7 +1878,7 @@ script 464 (int id)
 	setfont("smallfont");
 	hudmessage(s:"Total points on server: ",i:GetDBEntry ("totalpoints",playerid),s:"\nOverall rank: ",i:GetDBEntryRank ("totalpoints",playerid, TRUE ); HUDMSG_PLAIN, 304, CR_WHITE, 0.05, 0.8, 0);
 }
-
+*/
 //maps execute this to clear inventory on teleport
 script 465 (void)
 {
@@ -1832,7 +1894,7 @@ script 467 (int player) DISCONNECT
 {
 	gone[player] = 1;
 }
-
+/*
 script 469 (void) //global DB map updator
 {
 	while (updating == 1)
@@ -1868,4 +1930,67 @@ script 469 (void) //global DB map updator
 		//acs_executewait(463,0);
 		updating = 0;
 	
+}
+*/
+
+script 469 (void) //PUKE WITH EXTREME CAUTION, THIS SCRIPT MAY CAUSE HEAVY CPU LOAD
+{
+	//printbold(s:"463 executing");
+	for (int i = 1; i < MAXIDS; i++)
+	{
+		int mapsdone = 0;
+		int totaltime = 0;
+		int totaltime_1 = 0;
+		str playerid = strparam(i:i);
+		if (StrLen(GetDBEntryString ("PlayerNames", playerid )) == 0 || GetDBEntryString ("PlayerNames", playerid ) == "")
+			break;
+		int a = 0;
+		for (int l = 1; l < MAXIDS; l++) 
+		{
+			str playerid2 = strparam(i:i);
+			str mapid = strparam(i:l);
+			if (StrLen(GetDBEntryString ("MapNames", mapid )) == 0 || GetDBEntryString ("MapNames", mapid ) == "")
+				break;
+			str maplumppbs = strparam(s:GetDBEntryString ("MapNames", mapid ),s:"pbs");
+			if (GetDBEntry(maplumppbs,playerid2) > 0)
+			{
+				totaltime_1 += GetDBEntry(maplumppbs,playerid2);
+				mapsdone++;
+			}
+			if (a == 15)
+				delay(1);
+			else
+				a++;
+		}
+		str playerid3 = strparam(i:i);
+		totaltime = totaltime_1 + (getcvar("zr_totalmaps") - mapsdone)*getcvar("zr_maxtime");
+		SetDBEntry ("totaltime", playerid3, totaltime);
+		SetDBEntry ("mapsdone", playerid3, mapsdone);
+		SetDBEntry ("lastotalmaps", playerid3,GetCvar("zr_totalmaps"));
+	}
+	delay(35);
+	consolecommand("nextmap");
+}
+
+script 464 OPEN
+{
+	if(getcvar("zr_totalmaps") < 1 || getcvar("zr_maxtime") < 1)
+	{
+		int formermax = getcvar("sv_maxplayers");
+		while (getcvar("zr_totalmaps") < 1)
+		{
+			consolecommand("sv_maxplayers 0");
+			printbold(s:"zr_totalmaps not set yet!! Get an admin to set zr_totalmaps to the number of maps in the maplist!! or maxplayers will remain 0");
+			delay(5);
+		}
+		while (getcvar("zr_maxtime") < 1)
+		{
+			consolecommand("sv_maxplayers 0");
+			printbold(s:"zr_maxtime not set yet!! Get an admin to set zr_maxtime to a high time in tics (eg 35 times time in seconds) above any reasonable good time on any map or maxplayers will remain 0");
+			delay(5);
+		}
+		str command1 = strparam(s:"sv_maxplayers ",i:formermax);
+		consolecommand(command1);
+	}
+	flagsset = 1;
 }
